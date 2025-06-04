@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PeerConnect - P2P Video Calling</title>
+    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #1a2a6c);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            color: white;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        header {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 20px;
+            text-align: center;
+            border-bottom: 2px solid #ff6b6b;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            color: #4dabf7;
+            text-shadow: 0 0 10px rgba(77, 171, 247, 0.7);
+        }
+        
+        .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.8;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .main-content {
+            display: flex;
+            min-height: 500px;
+        }
+        
+        .left-panel, .right-panel {
+            padding: 30px;
+            flex: 1;
+        }
+        
+        .left-panel {
+            border-right: 1px solid #333;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .panel-title {
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+            color: #ff6b6b;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .panel-title i {
+            color: #4dabf7;
+        }
+        
+        .card {
+            background: rgba(30, 30, 46, 0.8);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .code-display {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .code-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            letter-spacing: 3px;
+            color: #4dabf7;
+            text-align: center;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            border: 2px solid #4dabf7;
+        }
+        
+        .instructions {
+            font-size: 1.1rem;
+            line-height: 1.6;
+        }
+        
+        .instructions li {
+            margin-bottom: 10px;
+            padding-left: 25px;
+            position: relative;
+        }
+        
+        .instructions li i {
+            position: absolute;
+            left: 0;
+            top: 5px;
+            color: #ff6b6b;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .btn {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(to right, #4dabf7, #3b5bdb);
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(to right, #ff6b6b, #e03131);
+            color: white;
+        }
+        
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .video-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            height: 100%;
+        }
+        
+        .video-box {
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 15px;
+            overflow: hidden;
+            position: relative;
+            height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #333;
+        }
+        
+        .video-box.active {
+            border-color: #4dabf7;
+        }
+        
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            background: #000;
+        }
+        
+        .video-label {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.9rem;
+        }
+        
+        .connection-status {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 1.2rem;
+            height: 30px;
+        }
+        
+        .connected {
+            color: #51cf66;
+        }
+        
+        .disconnected {
+            color: #ff6b6b;
+        }
+        
+        .code-input-section {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .input-group {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .input-group input {
+            flex: 1;
+            padding: 15px;
+            border-radius: 10px;
+            border: none;
+            background: rgba(0, 0, 0, 0.3);
+            color: white;
+            font-size: 1.2rem;
+            text-align: center;
+            border: 2px solid #4dabf7;
+        }
+        
+        .input-group input:focus {
+            outline: none;
+            border-color: #ff6b6b;
+        }
+        
+        .call-controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .call-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+        }
+        
+        .start-call {
+            background: #51cf66;
+            color: white;
+        }
+        
+        .end-call {
+            background: #ff6b6b;
+            color: white;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.4);
+            border-top: 1px solid #333;
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+        
+        @media (max-width: 900px) {
+            .main-content {
+                flex-direction: column;
+            }
+            
+            .left-panel {
+                border-right: none;
+                border-bottom: 1px solid #333;
+            }
+            
+            .video-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>PeerConnect</h1>
+            <p class="subtitle">Secure peer-to-peer video calling with Telegram integration</p>
+        </header>
+        
+        <div class="main-content">
+            <div class="left-panel">
+                <h2 class="panel-title"><i class="fas fa-qrcode"></i> Your Connection Code</h2>
+                
+                <div class="card code-display">
+                    <div class="code-value" id="peerCode">Generating...</div>
+                    <p>Share this code with your friend to start a video call</p>
+                    
+                    <div class="action-buttons">
+                        <button class="btn btn-primary" id="shareBtn">
+                            <i class="fab fa-telegram"></i> Share via Telegram
+                        </button>
+                        <button class="btn btn-secondary" id="copyBtn">
+                            <i class="fas fa-copy"></i> Copy Code
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h3><i class="fas fa-info-circle"></i> How it works</h3>
+                    <ul class="instructions">
+                        <li><i class="fas fa-arrow-right"></i> Open this page to generate a unique connection code</li>
+                        <li><i class="fas fa-arrow-right"></i> Share this code via Telegram with your friend</li>
+                        <li><i class="fas fa-arrow-right"></i> Your friend enters this code in the connection panel</li>
+                        <li><i class="fas fa-arrow-right"></i> When connected, start your video call!</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="right-panel">
+                <h2 class="panel-title"><i class="fas fa-video"></i> Video Call</h2>
+                
+                <div class="video-container">
+                    <div class="video-box active" id="localVideoBox">
+                        <video id="localVideo" autoplay muted></video>
+                        <div class="video-label">You</div>
+                    </div>
+                    
+                    <div class="video-box" id="remoteVideoBox">
+                        <video id="remoteVideo" autoplay></video>
+                        <div class="video-label">Remote</div>
+                    </div>
+                </div>
+                
+                <div class="connection-status" id="connectionStatus">
+                    <span class="disconnected">Disconnected</span>
+                </div>
+                
+                <div class="card code-input-section">
+                    <h3><i class="fas fa-plug"></i> Connect to a Peer</h3>
+                    <p>Enter the code received via Telegram to connect</p>
+                    
+                    <div class="input-group">
+                        <input type="text" id="peerInput" placeholder="Enter connection code" maxlength="8">
+                        <button class="btn btn-primary" id="connectBtn">Connect</button>
+                    </div>
+                    
+                    <div class="call-controls">
+                        <button class="call-btn start-call" id="startCallBtn" disabled>
+                            <i class="fas fa-video"></i>
+                        </button>
+                        <button class="call-btn end-call" id="endCallBtn" disabled>
+                            <i class="fas fa-phone-slash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>PeerConnect uses WebRTC for peer-to-peer communication. Your video streams are never stored on any server.</p>
+        </footer>
+    </div>
+
+    <script>
+        // DOM Elements
+        const peerCodeEl = document.getElementById('peerCode');
+        const shareBtn = document.getElementById('shareBtn');
+        const copyBtn = document.getElementById('copyBtn');
+        const peerInput = document.getElementById('peerInput');
+        const connectBtn = document.getElementById('connectBtn');
+        const startCallBtn = document.getElementById('startCallBtn');
+        const endCallBtn = document.getElementById('endCallBtn');
+        const localVideo = document.getElementById('localVideo');
+        const remoteVideo = document.getElementById('remoteVideo');
+        const connectionStatus = document.getElementById('connectionStatus');
+        
+        // PeerJS variables
+        let peer;
+        let currentPeerId;
+        let localStream;
+        let remoteStream;
+        let activeConnection;
+        
+        // Initialize the application
+        async function init() {
+            // Generate peer ID
+            const peerId = generatePeerId();
+            peerCodeEl.textContent = peerId;
+            currentPeerId = peerId;
+            
+            // Initialize PeerJS
+            peer = new Peer(peerId, {
+                host: '0.peerjs.com',
+                port: 443,
+                path: '/',
+                secure: true
+            });
+            
+            // Peer event handlers
+            peer.on('open', (id) => {
+                console.log('Peer connected with ID:', id);
+                connectionStatus.innerHTML = `<span class="disconnected">Waiting for connection...</span>`;
+            });
+            
+            peer.on('connection', (conn) => {
+                console.log('Incoming connection from:', conn.peer);
+                activeConnection = conn;
+                setupConnection(conn);
+            });
+            
+            peer.on('error', (err) => {
+                console.error('PeerJS error:', err);
+                connectionStatus.innerHTML = `<span class="disconnected">Error: ${err.type}</span>`;
+            });
+            
+            // Get user media
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({
+                    video: true,
+                    audio: true
+                });
+                localVideo.srcObject = localStream;
+            } catch (err) {
+                console.error('Error accessing media devices:', err);
+                connectionStatus.innerHTML = `<span class="disconnected">Error accessing camera/microphone</span>`;
+            }
+        }
+        
+        // Generate a random peer ID
+        function generatePeerId() {
+            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+            let result = '';
+            for (let i = 0; i < 6; i++) {
+                result += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return result;
+        }
+        
+        // Set up connection events
+        function setupConnection(conn) {
+            conn.on('open', () => {
+                console.log('Connection established with:', conn.peer);
+                connectionStatus.innerHTML = `<span class="connected">Connected to ${conn.peer}</span>`;
+                startCallBtn.disabled = false;
+                endCallBtn.disabled = false;
+            });
+            
+            conn.on('data', (data) => {
+                console.log('Received data:', data);
+                if (data.type === 'callRequest') {
+                    startCall(conn.peer);
+                }
+            });
+            
+            conn.on('close', () => {
+                console.log('Connection closed');
+                connectionStatus.innerHTML = `<span class="disconnected">Connection closed</span>`;
+                startCallBtn.disabled = true;
+                endCallBtn.disabled = true;
+                if (remoteVideo.srcObject) {
+                    remoteVideo.srcObject.getTracks().forEach(track => track.stop());
+                    remoteVideo.srcObject = null;
+                }
+            });
+            
+            conn.on('error', (err) => {
+                console.error('Connection error:', err);
+                connectionStatus.innerHTML = `<span class="disconnected">Connection error</span>`;
+            });
+        }
+        
+        // Start a video call
+        function startCall(peerId) {
+            console.log('Starting call with:', peerId);
+            
+            // Call the remote peer
+            const call = peer.call(peerId, localStream);
+            
+            call.on('stream', (stream) => {
+                console.log('Received remote stream');
+                remoteStream = stream;
+                remoteVideo.srcObject = stream;
+            });
+            
+            call.on('close', () => {
+                console.log('Call ended');
+                if (remoteVideo.srcObject) {
+                    remoteVideo.srcObject.getTracks().forEach(track => track.stop());
+                    remoteVideo.srcObject = null;
+                }
+            });
+        }
+        
+        // Event Listeners
+        shareBtn.addEventListener('click', () => {
+            const message = `Connect with me! Use code: ${currentPeerId}\nLink: ${window.location.href}`;
+            const telegramUrl = `https://t.me/share/url?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(message)}`;
+            
+            window.open(telegramUrl, '_blank');
+        });
+        
+        copyBtn.addEventListener('click', () => {
+            navigator.clipboard.writeText(currentPeerId)
+                .then(() => {
+                    const originalText = copyBtn.innerHTML;
+                    copyBtn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                    setTimeout(() => {
+                        copyBtn.innerHTML = originalText;
+                    }, 2000);
+                })
+                .catch(err => {
+                    console.error('Failed to copy:', err);
+                });
+        });
+        
+        connectBtn.addEventListener('click', () => {
+            const remotePeerId = peerInput.value.trim();
+            if (!remotePeerId) {
+                alert('Please enter a connection code');
+                return;
+            }
+            
+            if (remotePeerId === currentPeerId) {
+                alert('You cannot connect to yourself!');
+                return;
+            }
+            
+            console.log('Connecting to:', remotePeerId);
+            connectionStatus.innerHTML = `<span class="disconnected">Connecting to ${remotePeerId}...</span>`;
+            
+            // Establish connection
+            activeConnection = peer.connect(remotePeerId);
+            setupConnection(activeConnection);
+        });
+        
+        startCallBtn.addEventListener('click', () => {
+            if (activeConnection) {
+                activeConnection.send({ type: 'callRequest' });
+                startCall(activeConnection.peer);
+            }
+        });
+        
+        endCallBtn.addEventListener('click', () => {
+            if (activeConnection) {
+                activeConnection.close();
+            }
+            
+            if (remoteVideo.srcObject) {
+                remoteVideo.srcObject.getTracks().forEach(track => track.stop());
+                remoteVideo.srcObject = null;
+            }
+            
+            connectionStatus.innerHTML = `<span class="disconnected">Disconnected</span>`;
+            startCallBtn.disabled = true;
+            endCallBtn.disabled = true;
+        });
+        
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>

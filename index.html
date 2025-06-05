@@ -704,9 +704,9 @@
                     </div>
                 </div>
                 
-                <div class="secondary-videos" id="secondaryVideos">
-                    <!-- Secondary videos will be added here -->
-                </div>
+             <!--    <div class="secondary-videos" id="secondaryVideos">
+                    <!-- Secondary videos will be added here
+                </div> -->
             </div>
             
             <div class="local-video-container">
@@ -1264,7 +1264,7 @@
                     if (!audioContext) {
                         audioContext = new (window.AudioContext || window.webkitAudioContext)();
                         gainNode = audioContext.createGain();
-                        gainNode.gain.value = 2.0; // Double the volume
+                        gainNode.gain.value = 4.0; // Double the volume
                     }
                     
                     // Create a media stream source

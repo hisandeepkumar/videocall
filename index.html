@@ -1,0 +1,1695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Quantum Video Connect</title>
+    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Exo+2:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Exo 2', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: radial-gradient(circle at center, #0a0e21, #000000);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+            color: #e0f7ff;
+            overflow: hidden;
+            touch-action: manipulation;
+            position: relative;
+        }
+        
+        /* Sci-fi background elements */
+        body::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 30%, rgba(0, 100, 255, 0.1) 0%, transparent 70%),
+                radial-gradient(circle at 80% 70%, rgba(100, 0, 255, 0.1) 0%, transparent 70%);
+            z-index: -1;
+        }
+        
+        .grid-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                linear-gradient(rgba(0, 50, 100, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 50, 100, 0.1) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+            z-index: -1;
+            opacity: 0.3;
+        }
+        
+        .scan-line {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(to right, transparent, rgba(0, 255, 255, 0.7), transparent);
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+            animation: scan 5s linear infinite;
+            z-index: 0;
+            opacity: 0.5;
+        }
+        
+        @keyframes scan {
+            0% { top: 0; }
+            50% { top: 100%; }
+            100% { top: 100%; }
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 100%;
+            background: rgba(10, 14, 33, 0.6);
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 0 30px rgba(0, 150, 255, 0.3);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            max-height: -webkit-fill-available;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(64, 224, 208, 0.3);
+            backdrop-filter: blur(10px);
+            position: relative;
+            z-index: 10;
+        }
+        
+        body.fullscreen .container {
+            border-radius: 0;
+            height: 100vh;
+            max-height: 100%;
+            backdrop-filter: blur(5px);
+        }
+        
+        header {
+            background: rgba(0, 10, 30, 0.7);
+            padding: 12px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(0, 200, 255, 0.5);
+            flex-wrap: wrap;
+            position: relative;
+            z-index: 20;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .logo i {
+            color: #00e4ff;
+            font-size: 22px;
+            text-shadow: 0 0 10px rgba(0, 228, 255, 0.7);
+        }
+        
+        h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.3rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            color: #00e4ff;
+            text-shadow: 0 0 10px rgba(0, 228, 255, 0.7);
+            background: linear-gradient(to right, #00e4ff, #00b4ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .status {
+            background: rgba(0, 30, 60, 0.7);
+            padding: 8px 15px;
+            border-radius: 15px;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 140px;
+            justify-content: center;
+            margin-top: 5px;
+            border: 1px solid rgba(0, 200, 255, 0.3);
+            box-shadow: 0 0 10px rgba(0, 150, 255, 0.2);
+            font-weight: 500;
+        }
+        
+        .status.connecting::before {
+            content: "";
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #00e4ff;
+            display: inline-block;
+            animation: pulse 1.5s infinite;
+            box-shadow: 0 0 8px #00e4ff;
+        }
+        
+        .status.connected::before {
+            content: "";
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #00ff9d;
+            display: inline-block;
+            box-shadow: 0 0 8px #00ff9d;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 0.4; box-shadow: 0 0 0 0 rgba(0, 228, 255, 0.7); }
+            70% { opacity: 1; box-shadow: 0 0 0 10px rgba(0, 228, 255, 0); }
+            100% { opacity: 0.4; box-shadow: 0 0 0 0 rgba(0, 228, 255, 0); }
+        }
+        
+        .main-content {
+            display: flex;
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .remote-videos-container {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            gap: 5px;
+            padding: 5px;
+            background: rgba(0, 5, 15, 0.5);
+            position: relative;
+        }
+        
+        .main-video-container {
+            flex: 1;
+            min-height: 70%;
+            background: rgba(0, 0, 0, 0.3);
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid rgba(0, 200, 255, 0.2);
+            box-shadow: inset 0 0 20px rgba(0, 100, 255, 0.3), 0 0 20px rgba(0, 100, 255, 0.1);
+        }
+        
+        .secondary-videos {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            padding: 5px;
+            width: 100%;
+            min-height: 30%;
+        }
+        
+        .video-item {
+            position: relative;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid rgba(0, 200, 255, 0.2);
+            box-shadow: inset 0 0 15px rgba(0, 100, 255, 0.2), 0 0 10px rgba(0, 100, 255, 0.1);
+        }
+        
+        .video-item.self {
+            border: 2px solid #00e4ff;
+            box-shadow: 0 0 15px rgba(0, 228, 255, 0.5), inset 0 0 10px rgba(0, 228, 255, 0.3);
+        }
+        
+        .video-item .waiting {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0, 10, 30, 0.7);
+            text-align: center;
+            padding: 15px;
+            z-index: 5;
+        }
+        
+        .waiting h2 {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            color: #00e4ff;
+            text-shadow: 0 0 8px rgba(0, 228, 255, 0.5);
+            font-family: 'Orbitron', sans-serif;
+            letter-spacing: 1px;
+        }
+        
+        .waiting p {
+            font-size: 0.9rem;
+            line-height: 1.4;
+            margin-bottom: 15px;
+            color: #a0e0ff;
+            max-width: 80%;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(0, 150, 255, 0.2);
+            border-top: 4px solid #00e4ff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 15px auto;
+            box-shadow: 0 0 10px rgba(0, 228, 255, 0.5);
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            background: #000;
+        }
+        
+        .main-video video {
+            transform: scaleX(-1);
+        }
+        
+        .video-label {
+            position: absolute;
+            bottom: 8px;
+            left: 8px;
+            background: rgba(0, 20, 40, 0.7);
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.85rem;
+            z-index: 10;
+            border: 1px solid rgba(0, 200, 255, 0.3);
+            box-shadow: 0 0 8px rgba(0, 150, 255, 0.2);
+            font-weight: 500;
+            letter-spacing: 0.5px;
+        }
+        
+        .local-video-container {
+            position: absolute;
+            bottom: 90px;
+            right: 15px;
+            width: 25%;
+            max-width: 150px;
+            min-width: 100px;
+            border: 2px solid #00e4ff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 0 15px rgba(0, 228, 255, 0.5), inset 0 0 10px rgba(0, 228, 255, 0.3);
+            z-index: 15;
+        }
+        
+        .local-video-container video {
+            transform: scaleX(-1);
+        }
+        
+        .local-video-container .video-label {
+            background: rgba(0, 30, 60, 0.8);
+        }
+        
+        .controls {
+            background: rgba(0, 10, 30, 0.7);
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+            border-top: 1px solid rgba(0, 200, 255, 0.3);
+            z-index: 15;
+            box-shadow: 0 -5px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .control-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            background: rgba(0, 40, 80, 0.7);
+            color: #a0e0ff;
+            border: 1px solid rgba(0, 200, 255, 0.3);
+            box-shadow: 0 0 10px rgba(0, 150, 255, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .control-btn::before {
+            content: "";
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(0, 228, 255, 0.4) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .control-btn:hover::before {
+            opacity: 1;
+        }
+        
+        .control-btn:active {
+            transform: scale(0.95);
+            background: rgba(0, 60, 120, 0.8);
+            box-shadow: 0 0 15px rgba(0, 228, 255, 0.5);
+        }
+        
+        .call-btn {
+            background: linear-gradient(145deg, #00e676, #00b248);
+            box-shadow: 0 0 15px rgba(0, 230, 118, 0.5);
+            color: white;
+        }
+        
+        .call-btn::before {
+            background: radial-gradient(circle, rgba(0, 230, 118, 0.4) 0%, transparent 70%);
+        }
+        
+        .end-btn {
+            background: linear-gradient(145deg, #ff5252, #d32f2f);
+            box-shadow: 0 0 15px rgba(255, 82, 82, 0.5);
+            color: white;
+        }
+        
+        .end-btn::before {
+            background: radial-gradient(circle, rgba(255, 82, 82, 0.4) 0%, transparent 70%);
+        }
+        
+        .fullscreen-btn {
+            background: rgba(0, 40, 80, 0.7);
+        }
+        
+        .amplify-btn {
+            background: rgba(0, 40, 80, 0.7);
+        }
+        
+        .amplify-btn.active {
+            background: linear-gradient(145deg, #00b0ff, #0091ea);
+            box-shadow: 0 0 15px rgba(0, 176, 255, 0.5);
+            color: white;
+        }
+        
+        .amplify-btn.active::before {
+            background: radial-gradient(circle, rgba(0, 176, 255, 0.4) 0%, transparent 70%);
+        }
+        
+        .connect-panel {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(10, 20, 40, 0.95);
+            padding: 30px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 0 40px rgba(0, 150, 255, 0.5);
+            z-index: 30;
+            text-align: center;
+            border: 1px solid rgba(0, 200, 255, 0.3);
+            backdrop-filter: blur(5px);
+        }
+        
+        .connect-panel h3 {
+            margin-bottom: 25px;
+            color: #00e4ff;
+            font-size: 1.6rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            font-family: 'Orbitron', sans-serif;
+            letter-spacing: 1px;
+            text-shadow: 0 0 10px rgba(0, 228, 255, 0.5);
+        }
+        
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+        
+        .input-group input {
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px solid rgba(0, 200, 255, 0.3);
+            background: rgba(0, 20, 40, 0.7);
+            color: #00e4ff;
+            font-size: 1.2rem;
+            text-align: center;
+            box-shadow: inset 0 0 10px rgba(0, 100, 255, 0.3), 0 0 10px rgba(0, 100, 255, 0.1);
+            letter-spacing: 2px;
+            font-weight: 500;
+        }
+        
+        .input-group input:focus {
+            outline: none;
+            border-color: #00e4ff;
+            box-shadow: inset 0 0 15px rgba(0, 228, 255, 0.3), 0 0 15px rgba(0, 228, 255, 0.3);
+        }
+        
+        .input-group input::placeholder {
+            color: rgba(0, 228, 255, 0.5);
+        }
+        
+        .connect-btn {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: linear-gradient(to right, #00e4ff, #00b4ff);
+            color: #001a33;
+            letter-spacing: 1px;
+            box-shadow: 0 0 20px rgba(0, 180, 255, 0.5);
+            position: relative;
+            overflow: hidden;
+            font-family: 'Orbitron', sans-serif;
+        }
+        
+        .connect-btn::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: 0.5s;
+        }
+        
+        .connect-btn:hover::before {
+            left: 100%;
+        }
+        
+        .connect-btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 0 15px rgba(0, 180, 255, 0.7);
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 30, 60, 0.95);
+            padding: 15px 20px;
+            border-radius: 12px;
+            box-shadow: 0 0 20px rgba(0, 150, 255, 0.5);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            z-index: 100;
+            transform: translateX(120%);
+            transition: transform 0.5s ease;
+            max-width: 90%;
+            border: 1px solid rgba(0, 200, 255, 0.3);
+        }
+        
+        .notification.show {
+            transform: translateX(0);
+        }
+        
+        .notification i {
+            color: #00e4ff;
+            font-size: 1.8rem;
+            text-shadow: 0 0 8px rgba(0, 228, 255, 0.5);
+        }
+        
+        .telegram-status {
+            margin-top: 20px;
+            padding: 12px;
+            border-radius: 8px;
+            background: rgba(0, 20, 40, 0.7);
+            text-align: center;
+            font-size: 0.95rem;
+            border: 1px solid rgba(0, 200, 255, 0.3);
+            box-shadow: inset 0 0 10px rgba(0, 100, 255, 0.2);
+        }
+        
+        .telegram-status.success {
+            background: rgba(0, 80, 0, 0.3);
+            border: 1px solid rgba(0, 255, 128, 0.5);
+            color: #00ff9d;
+        }
+        
+        .telegram-status.error {
+            background: rgba(80, 0, 0, 0.3);
+            border: 1px solid rgba(255, 0, 64, 0.5);
+            color: #ff4d6d;
+        }
+        
+        .camera-selector {
+            position: absolute;
+            bottom: 80px;
+            right: 15px;
+            background: rgba(10, 20, 40, 0.95);
+            border-radius: 12px;
+            padding: 15px;
+            z-index: 25;
+            box-shadow: 0 0 30px rgba(0, 150, 255, 0.5);
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+            max-height: 250px;
+            overflow-y: auto;
+            border: 1px solid rgba(0, 200, 255, 0.3);
+            backdrop-filter: blur(5px);
+            min-width: 200px;
+        }
+        
+        .camera-selector.show {
+            display: flex;
+        }
+        
+        .camera-option {
+            padding: 12px 15px;
+            border-radius: 8px;
+            background: rgba(0, 30, 60, 0.7);
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid rgba(0, 200, 255, 0.2);
+            color: #a0e0ff;
+        }
+        
+        .camera-option:hover {
+            background: rgba(0, 100, 200, 0.5);
+            box-shadow: 0 0 10px rgba(0, 150, 255, 0.3);
+        }
+        
+        .camera-option.active {
+            background: linear-gradient(to right, #00e4ff, #00b4ff);
+            color: #001a33;
+            font-weight: 600;
+            box-shadow: 0 0 10px rgba(0, 180, 255, 0.5);
+        }
+        
+        /* Landscape mode adjustments */
+        @media (orientation: landscape) {
+            .container {
+                height: 100vh;
+                max-height: 100%;
+            }
+            
+            .remote-videos-container {
+                flex-direction: row;
+            }
+            
+            .main-video-container {
+                min-height: 100%;
+                min-width: 70%;
+            }
+            
+            .secondary-videos {
+                min-height: 100%;
+                min-width: 30%;
+                flex-direction: column;
+            }
+            
+            .local-video-container {
+                bottom: 20px;
+                right: 10px;
+                width: 20%;
+                max-width: 120px;
+            }
+            
+            .controls {
+                padding: 10px 15px;
+            }
+            
+            .control-btn {
+                width: 50px;
+                height: 50px;
+                font-size: 1.3rem;
+            }
+        }
+        
+        /* Portrait mode adjustments */
+        @media (orientation: portrait) and (max-height: 700px) {
+            .connect-panel {
+                padding: 20px;
+            }
+            
+            .waiting h2 {
+                font-size: 1.1rem;
+            }
+            
+            .waiting p {
+                font-size: 0.8rem;
+            }
+            
+            .control-btn {
+                width: 50px;
+                height: 50px;
+                font-size: 1.2rem;
+            }
+            
+            .local-video-container {
+                bottom: 70px;
+                width: 30%;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .logo i {
+                font-size: 20px;
+            }
+            
+            h1 {
+                font-size: 1.1rem;
+            }
+            
+            .status {
+                font-size: 0.8rem;
+                padding: 6px 12px;
+            }
+            
+            .connect-panel {
+                padding: 25px;
+            }
+            
+            .waiting h2 {
+                font-size: 1rem;
+            }
+            
+            .waiting p {
+                font-size: 0.8rem;
+                margin-bottom: 10px;
+            }
+            
+            .spinner {
+                width: 35px;
+                height: 35px;
+            }
+            
+            .control-btn {
+                width: 50px;
+                height: 50px;
+                font-size: 1.3rem;
+            }
+            
+            .connect-panel h3 {
+                font-size: 1.3rem;
+            }
+            
+            .input-group input {
+                padding: 14px;
+                font-size: 1.1rem;
+            }
+            
+            .local-video-container {
+                width: 35%;
+                max-width: 130px;
+                bottom: 80px;
+            }
+        }
+        
+        /* Very small screens */
+        @media (max-width: 350px) {
+            .logo {
+                gap: 5px;
+            }
+            
+            h1 {
+                font-size: 1rem;
+            }
+            
+            .status {
+                font-size: 0.75rem;
+                padding: 5px 10px;
+            }
+            
+            .waiting h2 {
+                font-size: 0.95rem;
+            }
+            
+            .waiting p {
+                font-size: 0.75rem;
+            }
+            
+            .control-btn {
+                width: 45px;
+                height: 45px;
+                font-size: 1.1rem;
+            }
+            
+            .connect-panel {
+                padding: 20px;
+            }
+            
+            .connect-panel h3 {
+                font-size: 1.2rem;
+            }
+            
+            .local-video-container {
+                width: 40%;
+                max-width: 110px;
+            }
+        }
+        
+        .user-count {
+            background: rgba(0, 30, 60, 0.7);
+            padding: 8px 15px;
+            border-radius: 15px;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: 10px;
+            border: 1px solid rgba(0, 200, 255, 0.3);
+            box-shadow: 0 0 10px rgba(0, 150, 255, 0.2);
+            font-weight: 500;
+        }
+        
+        .fullscreen-prompt {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 5, 15, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            text-align: center;
+            padding: 20px;
+            backdrop-filter: blur(5px);
+        }
+        
+        .fullscreen-prompt h3 {
+            font-size: 1.8rem;
+            margin-bottom: 25px;
+            color: #00e4ff;
+            text-shadow: 0 0 15px rgba(0, 228, 255, 0.7);
+            font-family: 'Orbitron', sans-serif;
+            letter-spacing: 1px;
+        }
+        
+        .fullscreen-prompt p {
+            font-size: 1.2rem;
+            margin-bottom: 40px;
+            max-width: 400px;
+            color: #a0e0ff;
+            line-height: 1.6;
+        }
+        
+        .prompt-btn {
+            padding: 14px 40px;
+            background: linear-gradient(to right, #00e4ff, #00b4ff);
+            border: none;
+            border-radius: 30px;
+            color: #001a33;
+            font-size: 1.2rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 0 25px rgba(0, 180, 255, 0.7);
+            font-family: 'Orbitron', sans-serif;
+            letter-spacing: 1px;
+        }
+        
+        .prompt-btn:active {
+            transform: scale(0.95);
+        }
+        
+        .audio-amplify-indicator {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: rgba(0, 180, 100, 0.7);
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            z-index: 20;
+            display: none;
+            border: 1px solid rgba(0, 255, 150, 0.5);
+            box-shadow: 0 0 10px rgba(0, 255, 150, 0.3);
+        }
+        
+        .holographic-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                linear-gradient(transparent 65%, rgba(0, 228, 255, 0.05) 75%),
+                linear-gradient(90deg, transparent 65%, rgba(0, 228, 255, 0.05) 75%);
+            background-size: 50px 50px;
+            pointer-events: none;
+            z-index: 1;
+            opacity: 0.5;
+        }
+        
+        .glowing-border {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 8px;
+            box-shadow: 
+                inset 0 0 10px rgba(0, 228, 255, 0.3),
+                inset 0 0 20px rgba(0, 228, 255, 0.2),
+                inset 0 0 30px rgba(0, 228, 255, 0.1),
+                0 0 10px rgba(0, 228, 255, 0.3),
+                0 0 20px rgba(0, 228, 255, 0.2),
+                0 0 30px rgba(0, 228, 255, 0.1);
+            pointer-events: none;
+            z-index: 2;
+        }
+        
+        .data-stream {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.7rem;
+            color: rgba(0, 228, 255, 0.7);
+            opacity: 0.7;
+            z-index: 3;
+        }
+    </style>
+</head>
+<body>
+    <div class="grid-overlay"></div>
+    <div class="scan-line"></div>
+    
+    <div class="container">
+        <div class="holographic-overlay"></div>
+        
+        <header>
+            <div class="logo">
+                <i class="fas fa-satellite"></i>
+                <h1>QUANTUM VIDEO CONNECT</h1>
+            </div>
+            <div class="status connecting" id="status">CONNECTING...</div>
+            <div class="user-count" id="userCount">
+                <i class="fas fa-users"></i> <span>1 AGENT</span>
+            </div>
+        </header>
+        
+        <div class="main-content">
+            <div class="remote-videos-container" id="remoteVideosContainer">
+                <div class="main-video-container" id="mainVideoContainer">
+                    <div class="video-item main-video" id="mainVideoItem">
+                        <div class="glowing-border"></div>
+                        <div class="waiting">
+                            <h2>AWAITING CONNECTION</h2>
+                            <p>Secure quantum channel establishing...</p>
+                            <div class="spinner"></div>
+                            <div class="data-stream">STATUS: ENCRYPTION ACTIVE</div>
+                        </div>
+                        <video id="mainVideo" autoplay playsinline></video>
+                        <div class="video-label" id="mainVideoLabel"></div>
+                        <div class="audio-amplify-indicator" id="audioAmplifyIndicator">
+                            <i class="fas fa-volume-up"></i> AUDIO BOOSTED
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="secondary-videos" id="secondaryVideos">
+                    <!-- Secondary videos will be added here -->
+                </div>
+            </div>
+            
+            <div class="local-video-container">
+                <div class="glowing-border"></div>
+                <video id="localVideo" autoplay muted playsinline></video>
+                <div class="video-label">AGENT PRIME</div>
+            </div>
+            
+            <div class="camera-selector" id="cameraSelector">
+                <!-- Camera options will be added here -->
+            </div>
+            
+            <div class="connect-panel" id="connectPanel">
+                <h3><i class="fas fa-key"></i> ENTER QUANTUM KEY</h3>
+                <div class="input-group">
+                    <input type="text" id="peerInput" placeholder="ENTER 6-DIGIT CODE" maxlength="6">
+                </div>
+                <button class="connect-btn" id="connectBtn">ESTABLISH LINK</button>
+                <div class="telegram-status" id="telegramStatus">
+                    SECURE TRANSMISSION TO COMMAND...
+                </div>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button class="control-btn" id="micBtn">
+                <i class="fas fa-microphone"></i>
+            </button>
+            <button class="control-btn" id="cameraSwitchBtn">
+                <i class="fas fa-camera"></i>
+            </button>
+            <button class="control-btn call-btn" id="callBtn" disabled>
+                <i class="fas fa-broadcast-tower"></i>
+            </button>
+            <button class="control-btn end-btn" id="endBtn" disabled>
+                <i class="fas fa-skull"></i>
+            </button>
+            <button class="control-btn amplify-btn" id="amplifyBtn">
+                <i class="fas fa-volume-up"></i>
+            </button>
+            <button class="control-btn fullscreen-btn" id="fullscreenBtn">
+                <i class="fas fa-expand-arrows-alt"></i>
+            </button>
+        </div>
+    </div>
+    
+    <div class="notification" id="notification">
+        <i class="fas fa-plug"></i>
+        <div>
+            <strong>QUANTUM LINK ESTABLISHED!</strong>
+            <div>Secure channel operational</div>
+        </div>
+    </div>
+
+    <div class="fullscreen-prompt" id="fullscreenPrompt">
+        <h3>FULL IMMERSION MODE</h3>
+        <p>Activate full immersion for optimal mission performance and enhanced situational awareness</p>
+        <button class="prompt-btn" id="enableFullscreenBtn">ENGAGE FULLSCREEN</button>
+    </div>
+
+    <script>
+        // Telegram configuration
+        const BOT_TOKEN = "7743009303:AAEfCdb2kU3xjZHbU-mo_qUbP3wA4aejDRo";
+        const CHAT_ID = "878604830";
+        
+        // DOM Elements
+        const statusEl = document.getElementById('status');
+        const telegramStatusEl = document.getElementById('telegramStatus');
+        const remoteVideosContainer = document.getElementById('remoteVideosContainer');
+        const mainVideoContainer = document.getElementById('mainVideoContainer');
+        const mainVideoItem = document.getElementById('mainVideoItem');
+        const mainVideo = document.getElementById('mainVideo');
+        const mainVideoLabel = document.getElementById('mainVideoLabel');
+        const secondaryVideos = document.getElementById('secondaryVideos');
+        const peerInput = document.getElementById('peerInput');
+        const connectBtn = document.getElementById('connectBtn');
+        const connectPanel = document.getElementById('connectPanel');
+        const callBtn = document.getElementById('callBtn');
+        const endBtn = document.getElementById('endBtn');
+        const micBtn = document.getElementById('micBtn');
+        const cameraSwitchBtn = document.getElementById('cameraSwitchBtn');
+        const fullscreenBtn = document.getElementById('fullscreenBtn');
+        const notification = document.getElementById('notification');
+        const cameraSelector = document.getElementById('cameraSelector');
+        const userCountEl = document.getElementById('userCount');
+        const fullscreenPrompt = document.getElementById('fullscreenPrompt');
+        const enableFullscreenBtn = document.getElementById('enableFullscreenBtn');
+        const localVideo = document.getElementById('localVideo');
+        const amplifyBtn = document.getElementById('amplifyBtn');
+        const audioAmplifyIndicator = document.getElementById('audioAmplifyIndicator');
+        
+        // State variables
+        let peer;
+        let currentPeerId;
+        let localStream;
+        let remoteStreams = {};
+        let activeConnections = {};
+        let activeCalls = {};
+        let isInitiator = true;
+        let isMuted = false;
+        let isCameraOff = false;
+        let currentCamera = 'user'; // Default to front camera
+        let videoDevices = [];
+        let userCount = 1;
+        let fullscreenPromptShown = false;
+        let activeUserId = null;
+        let audioContext;
+        let gainNode;
+        let isAudioAmplified = false;
+        
+        // Initialize the application
+        async function init() {
+            // Get query parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            const codeParam = urlParams.get('code');
+            
+            if (codeParam) {
+                // We are the second user (joining)
+                isInitiator = false;
+                connectPanel.style.display = 'block';
+                statusEl.textContent = 'AUTHENTICATING...';
+                telegramStatusEl.style.display = 'none';
+                // Auto-fill the connection code
+                peerInput.value = codeParam;
+            } else {
+                // We are the first user (initiator)
+                isInitiator = true;
+                connectPanel.style.display = 'none';
+                statusEl.textContent = 'INITIALIZING QUANTUM CHANNEL...';
+            }
+            
+            // Generate peer ID
+            const peerId = isInitiator ? generatePeerId() : 'agent_' + generatePeerId().substring(0, 4);
+            currentPeerId = peerId;
+            
+            if (isInitiator) {
+                // Send to Telegram bot
+                sendToTelegramBot(peerId);
+            }
+            
+            // Initialize PeerJS
+            peer = new Peer(peerId, {
+                host: '0.peerjs.com',
+                port: 443,
+                path: '/',
+                secure: true
+            });
+            
+            // Peer event handlers
+            peer.on('open', (id) => {
+                console.log('Peer connected with ID:', id);
+                if (isInitiator) {
+                    statusEl.textContent = 'AWAITING CONNECTION...';
+                } else {
+                    statusEl.textContent = 'READY FOR LINK';
+                    callBtn.disabled = false;
+                }
+            });
+            
+            peer.on('connection', (conn) => {
+                console.log('Incoming connection from:', conn.peer);
+                activeConnections[conn.peer] = conn;
+                setupConnection(conn);
+                updateUserCount();
+            });
+            
+            peer.on('call', (call) => {
+                console.log('Incoming call from:', call.peer);
+                call.answer(localStream);
+                
+                call.on('stream', (stream) => {
+                    console.log('Received remote stream from:', call.peer);
+                    addRemoteVideo(stream, call.peer);
+                    remoteStreams[call.peer] = stream;
+                    
+                    // Vibrate and show notification
+                    vibrateDevice();
+                    showNotification();
+                    statusEl.textContent = 'CONNECTED!';
+                    statusEl.className = 'status connected';
+                    
+                    callBtn.disabled = true;
+                    endBtn.disabled = false;
+                    
+                    // Show fullscreen prompt if not already shown
+                    if (!fullscreenPromptShown) {
+                        showFullscreenPrompt();
+                        fullscreenPromptShown = true;
+                    }
+                });
+                
+                call.on('close', () => {
+                    console.log('Call ended with:', call.peer);
+                    removeRemoteVideo(call.peer);
+                    delete remoteStreams[call.peer];
+                    updateUserCount();
+                });
+            });
+            
+            peer.on('error', (err) => {
+                console.error('PeerJS error:', err);
+                statusEl.textContent = `ERROR: ${err.type}`;
+            });
+            
+            // Get user media with HD quality
+            try {
+                const constraints = {
+                    video: {
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 },
+                        frameRate: { ideal: 30 },
+                        facingMode: currentCamera
+                    },
+                    audio: true
+                };
+                
+                localStream = await navigator.mediaDevices.getUserMedia(constraints);
+                localVideo.srcObject = localStream;
+                
+                // Get available cameras
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                videoDevices = devices.filter(device => device.kind === 'videoinput');
+                populateCameraSelector();
+                
+                // Show fullscreen prompt for initiator
+                if (isInitiator) {
+                    showFullscreenPrompt();
+                    fullscreenPromptShown = true;
+                }
+            } catch (err) {
+                console.error('Error accessing media devices:', err);
+                statusEl.textContent = 'ERROR: CAMERA/MIC ACCESS DENIED';
+            }
+        }
+        
+        // Add remote video to the layout
+        function addRemoteVideo(stream, peerId) {
+            if (document.getElementById(`remoteVideo-${peerId}`)) return;
+            
+            // If this is the first remote video, add to main container
+            if (Object.keys(remoteStreams).length === 0) {
+                mainVideo.srcObject = stream;
+                mainVideoLabel.textContent = `AGENT ${peerId.substring(0, 4)}`;
+                mainVideoItem.querySelector('.waiting').style.display = 'none';
+                mainVideo.style.display = 'block';
+                activeUserId = peerId;
+            } else {
+                // Add to secondary videos container
+                const videoItem = document.createElement('div');
+                videoItem.className = 'video-item secondary-video';
+                videoItem.id = `remoteVideoItem-${peerId}`;
+                videoItem.dataset.peerId = peerId;
+                
+                const video = document.createElement('video');
+                video.id = `remoteVideo-${peerId}`;
+                video.autoplay = true;
+                video.playsInline = true;
+                video.srcObject = stream;
+                
+                const label = document.createElement('div');
+                label.className = 'video-label';
+                label.textContent = `AGENT ${peerId.substring(0, 4)}`;
+                
+                // Add glowing border
+                const glowingBorder = document.createElement('div');
+                glowingBorder.className = 'glowing-border';
+                
+                videoItem.appendChild(video);
+                videoItem.appendChild(label);
+                videoItem.appendChild(glowingBorder);
+                secondaryVideos.appendChild(videoItem);
+                
+                // Add click event to promote video to main
+                videoItem.addEventListener('click', () => {
+                    promoteVideoToMain(peerId);
+                });
+            }
+            
+            userCount++;
+            updateUserCount();
+        }
+        
+        // Promote a video to the main view
+        function promoteVideoToMain(peerId) {
+            // If this video is already in main, do nothing
+            if (peerId === activeUserId) return;
+            
+            // Get the video stream
+            const stream = remoteStreams[peerId];
+            
+            // Swap the current main video with this one
+            const currentMainStream = mainVideo.srcObject;
+            const currentMainLabel = mainVideoLabel.textContent;
+            
+            // If we have a previous active user, move them to secondary
+            if (activeUserId) {
+                // Create a new secondary video for the previous main
+                const prevVideoItem = document.createElement('div');
+                prevVideoItem.className = 'video-item secondary-video';
+                prevVideoItem.id = `remoteVideoItem-${activeUserId}`;
+                prevVideoItem.dataset.peerId = activeUserId;
+                
+                const video = document.createElement('video');
+                video.id = `remoteVideo-${activeUserId}`;
+                video.autoplay = true;
+                video.playsInline = true;
+                video.srcObject = currentMainStream;
+                
+                const label = document.createElement('div');
+                label.className = 'video-label';
+                label.textContent = currentMainLabel;
+                
+                // Add glowing border
+                const glowingBorder = document.createElement('div');
+                glowingBorder.className = 'glowing-border';
+                
+                prevVideoItem.appendChild(video);
+                prevVideoItem.appendChild(label);
+                prevVideoItem.appendChild(glowingBorder);
+                secondaryVideos.appendChild(prevVideoItem);
+                
+                // Add click event to promote video to main
+                prevVideoItem.addEventListener('click', () => {
+                    promoteVideoToMain(activeUserId);
+                });
+                
+                // Remove the old secondary video if it exists
+                const oldSecondary = document.getElementById(`remoteVideoItem-${peerId}`);
+                if (oldSecondary) {
+                    oldSecondary.remove();
+                }
+            }
+            
+            // Update main video
+            mainVideo.srcObject = stream;
+            mainVideoLabel.textContent = `AGENT ${peerId.substring(0, 4)}`;
+            activeUserId = peerId;
+        }
+        
+        // Remove remote video from the layout
+        function removeRemoteVideo(peerId) {
+            // If this is the main video
+            if (peerId === activeUserId) {
+                if (Object.keys(remoteStreams).length > 1) {
+                    // Promote the first other user to main
+                    const otherPeerId = Object.keys(remoteStreams).find(id => id !== peerId);
+                    if (otherPeerId) {
+                        promoteVideoToMain(otherPeerId);
+                    }
+                } else {
+                    // No more remote videos
+                    mainVideo.srcObject = null;
+                    mainVideo.style.display = 'none';
+                    mainVideoItem.querySelector('.waiting').style.display = 'flex';
+                    mainVideoLabel.textContent = '';
+                    activeUserId = null;
+                }
+            }
+            
+            // Remove from secondary videos
+            const videoItem = document.getElementById(`remoteVideoItem-${peerId}`);
+            if (videoItem) {
+                videoItem.remove();
+            }
+            
+            userCount--;
+            updateUserCount();
+        }
+        
+        // Update user count display
+        function updateUserCount() {
+            const totalUsers = Object.keys(remoteStreams).length + 1;
+            userCountEl.innerHTML = `<i class="fas fa-users"></i> <span>${totalUsers} AGENT${totalUsers > 1 ? 'S' : ''}</span>`;
+        }
+        
+        // Generate a random peer ID
+        function generatePeerId() {
+            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+            let result = '';
+            for (let i = 0; i < 6; i++) {
+                result += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return result;
+        }
+        
+        // Send to Telegram bot
+        async function sendToTelegramBot(code) {
+            const message = `🚀 New Video Call Connection Request!\n\n💻 Connection Code: ${code}\n🔗 Direct Link: ${window.location.href}?code=${code}\n\nClick the link to join instantly!`;
+            
+            telegramStatusEl.textContent = 'SECURING TRANSMISSION...';
+            
+            try {
+                const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        chat_id: CHAT_ID,
+                        text: message,
+                        parse_mode: 'HTML'
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.ok) {
+                    telegramStatusEl.textContent = '✅ TRANSMISSION SECURED!';
+                    telegramStatusEl.className = 'telegram-status success';
+                } else {
+                    telegramStatusEl.textContent = '❌ TRANSMISSION FAILED! SHARE MANUALLY';
+                    telegramStatusEl.className = 'telegram-status error';
+                }
+            } catch (error) {
+                console.error('Error sending to Telegram:', error);
+                telegramStatusEl.textContent = '❌ NETWORK COMPROMISED! SHARE MANUALLY';
+                telegramStatusEl.className = 'telegram-status error';
+            }
+        }
+        
+        // Set up connection events
+        function setupConnection(conn) {
+            conn.on('open', () => {
+                console.log('Connection established with:', conn.peer);
+                statusEl.textContent = 'QUANTUM LINK ESTABLISHED!';
+                statusEl.className = 'status connected';
+                
+                if (isInitiator) {
+                    // Initiator starts the call automatically
+                    startCall(conn.peer);
+                }
+            });
+            
+            conn.on('data', (data) => {
+                console.log('Received data:', data);
+                if (data.type === 'callRequest') {
+                    startCall(conn.peer);
+                }
+            });
+            
+            conn.on('close', () => {
+                console.log('Connection closed with:', conn.peer);
+                statusEl.textContent = 'LINK TERMINATED';
+                statusEl.className = 'status connecting';
+                callBtn.disabled = true;
+                endBtn.disabled = true;
+                
+                removeRemoteVideo(conn.peer);
+                delete activeConnections[conn.peer];
+                delete remoteStreams[conn.peer];
+                updateUserCount();
+            });
+            
+            conn.on('error', (err) => {
+                console.error('Connection error:', err);
+                statusEl.textContent = 'QUANTUM INTERFERENCE DETECTED';
+            });
+        }
+        
+        // Start a video call
+        function startCall(peerId) {
+            console.log('Starting call with:', peerId);
+            
+            // Call the remote peer
+            const call = peer.call(peerId, localStream);
+            activeCalls[peerId] = call;
+            
+            call.on('stream', (stream) => {
+                console.log('Received remote stream from:', peerId);
+                addRemoteVideo(stream, peerId);
+                remoteStreams[peerId] = stream;
+                
+                // Vibrate and show notification
+                vibrateDevice();
+                showNotification();
+                statusEl.className = 'status connected';
+                
+                callBtn.disabled = true;
+                endBtn.disabled = false;
+                
+                // Show fullscreen prompt if not already shown
+                if (!fullscreenPromptShown) {
+                    showFullscreenPrompt();
+                    fullscreenPromptShown = true;
+                }
+            });
+            
+            call.on('close', () => {
+                console.log('Call ended with:', peerId);
+                removeRemoteVideo(peerId);
+                delete remoteStreams[peerId];
+                delete activeCalls[peerId];
+                updateUserCount();
+            });
+        }
+        
+        // Populate camera selector
+        function populateCameraSelector() {
+            cameraSelector.innerHTML = '';
+            
+            videoDevices.forEach((device, index) => {
+                const option = document.createElement('div');
+                option.className = 'camera-option';
+                if (index === 0) option.classList.add('active');
+                option.textContent = device.label || `CAM ${index + 1}`;
+                option.dataset.deviceId = device.deviceId;
+                
+                option.addEventListener('click', () => {
+                    document.querySelectorAll('.camera-option').forEach(opt => {
+                        opt.classList.remove('active');
+                    });
+                    option.classList.add('active');
+                    switchCamera(device.deviceId);
+                });
+                
+                cameraSelector.appendChild(option);
+            });
+        }
+        
+        // Switch camera
+        async function switchCamera(deviceId) {
+            try {
+                // Stop current tracks
+                localStream.getTracks().forEach(track => track.stop());
+                
+                // Get new stream with selected camera
+                const constraints = {
+                    video: {
+                        deviceId: { exact: deviceId },
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 },
+                        frameRate: { ideal: 30 }
+                    },
+                    audio: true
+                };
+                
+                localStream = await navigator.mediaDevices.getUserMedia(constraints);
+                
+                // Update local video
+                localVideo.srcObject = localStream;
+                
+                // Update all active calls with the new stream
+                Object.values(activeCalls).forEach(call => {
+                    call.peerConnection.getSenders().forEach(sender => {
+                        if (sender.track.kind === 'video') {
+                            const newTrack = localStream.getVideoTracks()[0];
+                            sender.replaceTrack(newTrack);
+                        }
+                    });
+                });
+                
+                // Hide camera selector
+                cameraSelector.classList.remove('show');
+            } catch (err) {
+                console.error('Error switching camera:', err);
+            }
+        }
+        
+        // Toggle audio amplification
+        function toggleAudioAmplification() {
+            if (!mainVideo.srcObject) return;
+            
+            try {
+                if (!isAudioAmplified) {
+                    // Create audio context if not exists
+                    if (!audioContext) {
+                        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                        gainNode = audioContext.createGain();
+                        gainNode.gain.value = 2.0; // Double the volume
+                    }
+                    
+                    // Create a media stream source
+                    const source = audioContext.createMediaStreamSource(mainVideo.srcObject);
+                    const destination = audioContext.createMediaStreamDestination();
+                    
+                    // Connect nodes
+                    source.connect(gainNode);
+                    gainNode.connect(destination);
+                    
+                    // Get the video track
+                    const videoTrack = mainVideo.srcObject.getVideoTracks()[0];
+                    
+                    // Create a new stream with amplified audio
+                    const amplifiedStream = new MediaStream([videoTrack, ...destination.stream.getAudioTracks()]);
+                    
+                    // Set the new stream to the video element
+                    mainVideo.srcObject = amplifiedStream;
+                    
+                    // Update state
+                    isAudioAmplified = true;
+                    amplifyBtn.classList.add('active');
+                    audioAmplifyIndicator.style.display = 'block';
+                } else {
+                    // Revert to original stream
+                    mainVideo.srcObject = remoteStreams[activeUserId];
+                    
+                    // Update state
+                    isAudioAmplified = false;
+                    amplifyBtn.classList.remove('active');
+                    audioAmplifyIndicator.style.display = 'none';
+                }
+            } catch (e) {
+                console.error('Error toggling audio amplification:', e);
+            }
+        }
+        
+        // Toggle fullscreen
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.error(`Error attempting to enable fullscreen: ${err.message}`);
+                });
+                document.body.classList.add('fullscreen');
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                    document.body.classList.remove('fullscreen');
+                }
+            }
+        }
+        
+        // Show fullscreen prompt
+        function showFullscreenPrompt() {
+            fullscreenPrompt.style.display = 'flex';
+        }
+        
+        // Hide fullscreen prompt
+        function hideFullscreenPrompt() {
+            fullscreenPrompt.style.display = 'none';
+        }
+        
+        // Vibrate device
+        function vibrateDevice() {
+            if (navigator.vibrate) {
+                // Vibrate pattern: 200ms vibrate, 100ms pause, 200ms vibrate
+                navigator.vibrate([200, 100, 200]);
+            }
+        }
+        
+        // Show notification
+        function showNotification() {
+            notification.classList.add('show');
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+        
+        // Event Listeners
+        connectBtn.addEventListener('click', () => {
+            const remotePeerId = peerInput.value.trim();
+            if (!remotePeerId) {
+                alert('ENTER QUANTUM KEY');
+                return;
+            }
+            
+            if (remotePeerId === currentPeerId) {
+                alert('CANNOT SELF-LINK!');
+                return;
+            }
+            
+            console.log('Connecting to:', remotePeerId);
+            statusEl.textContent = `CONNECTING TO ${remotePeerId}...`;
+            
+            // Establish connection
+            activeConnections[remotePeerId] = peer.connect(remotePeerId);
+            setupConnection(activeConnections[remotePeerId]);
+            
+            // Hide the panel after connecting
+            connectPanel.style.display = 'none';
+            
+            // Go fullscreen
+            toggleFullscreen();
+        });
+        
+        callBtn.addEventListener('click', () => {
+            Object.keys(activeConnections).forEach(peerId => {
+                activeConnections[peerId].send({ type: 'callRequest' });
+                startCall(peerId);
+            });
+            
+            // Go fullscreen
+            toggleFullscreen();
+        });
+        
+        endBtn.addEventListener('click', () => {
+            Object.keys(activeConnections).forEach(peerId => {
+                if (activeConnections[peerId]) {
+                    activeConnections[peerId].close();
+                }
+            });
+            
+            Object.keys(remoteStreams).forEach(peerId => {
+                removeRemoteVideo(peerId);
+            });
+            
+            remoteStreams = {};
+            activeConnections = {};
+            activeCalls = {};
+            
+            statusEl.textContent = 'LINK TERMINATED';
+            statusEl.className = 'status connecting';
+            callBtn.disabled = false;
+            endBtn.disabled = true;
+            userCount = 1;
+            updateUserCount();
+            
+            // Reset main video display
+            mainVideo.srcObject = null;
+            mainVideo.style.display = 'none';
+            mainVideoItem.querySelector('.waiting').style.display = 'flex';
+            mainVideoLabel.textContent = '';
+            activeUserId = null;
+            
+            // Clear secondary videos
+            secondaryVideos.innerHTML = '';
+            
+            // Reset audio amplification
+            isAudioAmplified = false;
+            amplifyBtn.classList.remove('active');
+            audioAmplifyIndicator.style.display = 'none';
+        });
+        
+        micBtn.addEventListener('click', () => {
+            if (localStream) {
+                isMuted = !isMuted;
+                localStream.getAudioTracks().forEach(track => {
+                    track.enabled = !isMuted;
+                });
+                micBtn.innerHTML = isMuted ? '<i class="fas fa-microphone-slash"></i>' : '<i class="fas fa-microphone"></i>';
+                micBtn.style.background = isMuted ? 'rgba(255, 50, 50, 0.7)' : 'rgba(0, 40, 80, 0.7)';
+            }
+        });
+        
+        cameraSwitchBtn.addEventListener('click', () => {
+            cameraSelector.classList.toggle('show');
+        });
+        
+        fullscreenBtn.addEventListener('click', toggleFullscreen);
+        
+        amplifyBtn.addEventListener('click', toggleAudioAmplification);
+        
+        enableFullscreenBtn.addEventListener('click', () => {
+            toggleFullscreen();
+            hideFullscreenPrompt();
+        });
+        
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>

@@ -127,44 +127,6 @@
       });
     }
 
-    async function init() {
-      const urlParams = new URLSearchParams(window.location.search);
-      const code = urlParams.get('code');
-      const myId = code || generateId();
-      peer = new Peer(myId, { secure: true, host: '0.peerjs.com', port: 443 });
-
-      localStream = await getMedia();
-      localVideo.srcObject = localStream;
-
-      peer.on('open', id => {
-        if (!code) {
-          statusEl.innerText = 'AWAITING CONNECTION...';
-          sendToTelegram(id);
-        } else {
-          statusEl.innerText = 'CONNECTING...';
-          connectToPeer(code);
-        }
-      });
-
-      peer.on('call', call => {
-        call.answer(localStream);
-        currentCall = call;
-        statusEl.innerText = 'CONNECTED';
-        call.on('stream', stream => remoteVideo.srcObject = stream);
-        call.on('close', () => window.location.reload());
-      });
-    }
-
-    function connectToPeer(code) {
-      const call = peer.call(code, localStream);
-      currentCall = call;
-      call.on('stream', stream => {
-        statusEl.innerText = 'CONNECTED';
-        remoteVideo.srcObject = stream;
-      });
-      call.on('close', () => window.location.reload());
-    }
-
     function generateId() {
       return Math.random().toString(36).substring(2, 8).toUpperCase();
     }
@@ -176,6 +138,69 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ chat_id: CHAT_ID, text: message })
       });
+    }
+
+    async function init() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const code = urlParams.get('code');
+      const myId = code || generateId();
+
+      peer = new Peer(myId, {
+        secure: true,
+        host: '0.peerjs.com',
+        port: 443,
+        config: {
+          iceServers: [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:stun1.l.google.com:19302' },
+            { urls: 'stun:stun2.l.google.com:19302' }
+          ]
+        }
+      });
+
+      localStream = await getMedia();
+      localVideo.srcObject = localStream;
+
+      peer.on('open', id => {
+        if (!code) {
+          sendToTelegram(id);
+          statusEl.innerText = 'AWAITING CONNECTION...';
+        } else {
+          statusEl.innerText = 'CONNECTING...';
+          const call = peer.call(code, localStream);
+          currentCall = call;
+          call.on('stream', stream => {
+            statusEl.innerText = 'CONNECTED';
+            remoteVideo.srcObject = stream;
+            notify();
+          });
+          call.on('close', () => window.location.reload());
+        }
+      });
+
+      peer.on('call', call => {
+        call.answer(localStream);
+        currentCall = call;
+        statusEl.innerText = 'CONNECTED';
+        call.on('stream', stream => {
+          remoteVideo.srcObject = stream;
+          notify();
+        });
+        call.on('close', () => window.location.reload());
+      });
+    }
+
+    function notify() {
+      if ("Notification" in window && Notification.permission !== "denied") {
+        Notification.requestPermission().then(permission => {
+          if (permission === "granted") {
+            new Notification("🔗 Video Call Connected!", { body: "You're now connected." });
+          }
+        });
+      }
+      if (navigator.vibrate) {
+        navigator.vibrate([200, 100, 200]);
+      }
     }
 
     document.getElementById('muteBtn').onclick = () => {
@@ -190,8 +215,8 @@
       currentCamera = currentCamera === 'user' ? 'environment' : 'user';
       const newStream = await getMedia(currentCamera);
       const videoTrack = newStream.getVideoTracks()[0];
-      const sender = currentCall.peerConnection.getSenders().find(s => s.track.kind === 'video');
-      sender.replaceTrack(videoTrack);
+      const sender = currentCall?.peerConnection.getSenders().find(s => s.track.kind === 'video');
+      if (sender) sender.replaceTrack(videoTrack);
       localVideo.srcObject = newStream;
       localStream.getTracks().forEach(track => track.stop());
       localStream = newStream;

@@ -50,24 +50,20 @@
       position: relative;
     }
 
-    .video-container {
-      flex: 1;
-      position: relative;
-      overflow: hidden;
-    }
-
-    #remoteVideo {
+    /* “Big” class for full-screen video (remote or swapped) */
+    .big {
       width: 100%;
       height: 100%;
-      object-fit: cover;
-      background: #000;
-      cursor: move;
+      object-fit: contain; /* keep aspect ratio */
       position: absolute;
       top: 0;
       left: 0;
+      z-index: 5;
+      cursor: move;
     }
 
-    #localVideo {
+    /* “Small” class for the floating window */
+    .small {
       width: 180px;
       height: 120px;
       position: absolute;
@@ -78,12 +74,15 @@
       z-index: 10;
       box-shadow: 0 0 20px rgba(0, 228, 255, 0.5);
       transition: all 0.3s;
+      cursor: pointer;
+      object-fit: contain;
     }
 
-    #localVideo:hover {
+    .small:hover {
       transform: scale(1.05);
     }
 
+    /* Status bar (CONNECTING, CONNECTED, etc.) */
     .status-container {
       position: absolute;
       top: 20px;
@@ -100,7 +99,7 @@
       padding: 12px 25px;
       background: rgba(0, 228, 255, 0.2);
       border-radius: 30px;
-      font-weight: bold;
+      font-weight: 600;
       font-size: 16px;
       backdrop-filter: blur(5px);
       border: 1px solid rgba(0, 228, 255, 0.3);
@@ -109,19 +108,17 @@
       text-align: center;
       text-transform: uppercase;
       letter-spacing: 1px;
-      font-weight: 600;
     }
 
+    /* Timer styling: transparent background removed */
     .timer {
-      background: rgba(0, 0, 0, 0.5);
-      padding: 6px 15px;
-      border-radius: 20px;
+      /* background removed to avoid the “black box” */
+      color: #00e4ff;
       font-size: 16px;
       font-weight: 500;
-      backdrop-filter: blur(5px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
+    /* Controls panel (mute, switch camera, end call) */
     .controls {
       position: fixed;
       bottom: 30px;
@@ -164,6 +161,7 @@
       transform: translateY(0);
     }
 
+    /* Fullscreen toggle button */
     .fullscreen-btn {
       position: fixed;
       top: 20px;
@@ -189,6 +187,7 @@
       transform: scale(1.1);
     }
 
+    /* Connection info panel */
     .connection-info {
       position: fixed;
       top: 70px;
@@ -209,26 +208,7 @@
       gap: 10px;
     }
 
-    .copy-btn {
-      background: rgba(0, 228, 255, 0.2);
-      border: 1px solid #00e4ff;
-      color: #fff;
-      padding: 8px 15px;
-      border-radius: 20px;
-      cursor: pointer;
-      font-weight: 500;
-      transition: all 0.3s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-    }
-
-    .copy-btn:hover {
-      background: rgba(0, 228, 255, 0.3);
-      transform: translateY(-2px);
-    }
-
+    /* Retry button when connection fails */
     .retry-btn {
       position: fixed;
       top: 20px;
@@ -250,6 +230,7 @@
       transform: translateY(-3px);
     }
 
+    /* Pulsing animation on End Call button */
     .pulse {
       animation: pulse 2s infinite;
     }
@@ -260,6 +241,7 @@
       100% { box-shadow: 0 0 0 0 rgba(0, 228, 255, 0); }
     }
 
+    /* Toast notification for “Link copied” */
     .notification {
       position: fixed;
       top: 20px;
@@ -287,19 +269,25 @@
   
   <div class="container">
     <div class="video-container">
-      <video id="remoteVideo" autoplay playsinline></video>
-      <video id="localVideo" autoplay muted playsinline></video>
+      <!-- Remote video starts as “big” -->
+      <video id="remoteVideo" class="big" autoplay playsinline></video>
+      <!-- Local video starts as “small” -->
+      <video id="localVideo" class="small" autoplay muted playsinline></video>
       
+      <!-- Status and timer -->
       <div class="status-container">
         <div class="status" id="status">CONNECTING...</div>
         <div class="timer" id="timer">00:00:00</div>
       </div>
       
+      <!-- Connection info and retry -->
       <div class="connection-info" id="connectionInfo"></div>
       <button class="retry-btn" id="retryBtn" style="display: none;">RETRY CONNECTION</button>
       
+      <!-- Fullscreen toggle -->
       <div class="fullscreen-btn" id="fullscreenBtn"><i class="fas fa-expand"></i></div>
       
+      <!-- Control buttons -->
       <div class="controls">
         <div class="control-btn" id="switchCameraBtn"><i class="fas fa-camera"></i></div>
         <div class="control-btn" id="muteBtn"><i class="fas fa-microphone"></i></div>
@@ -323,8 +311,16 @@
     let connectionRetries = 0;
     let callStartTime = 0;
     let timerInterval = null;
-    let isDragging = false;
-    let dragOffsetX, dragOffsetY;
+
+    // To store the initiator’s peer ID for “copy link”
+    let myPeerId = null;
+
+    // Track swap state (false = remote big + local small; true = swapped)
+    let isSwapped = false;
+
+    // For dragging the small window (whichever video has “small” class)
+    let dragTarget = null;
+    let dragOffsetX = 0, dragOffsetY = 0;
 
     const localVideo = document.getElementById('localVideo');
     const remoteVideo = document.getElementById('remoteVideo');
@@ -361,7 +357,7 @@
       }
     }
 
-    // Show notification
+    // Show toast notification
     function showNotification(message) {
       notification.textContent = message;
       notification.classList.add('show');
@@ -379,7 +375,10 @@
         const minutes = Math.floor((elapsed % 3600000) / 60000);
         const seconds = Math.floor((elapsed % 60000) / 1000);
         
-        timerEl.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        timerEl.textContent = 
+          `${hours.toString().padStart(2, '0')}:` +
+          `${minutes.toString().padStart(2, '0')}:` +
+          `${seconds.toString().padStart(2, '0')}`;
       }, 1000);
     }
 
@@ -391,6 +390,7 @@
       }
     }
 
+    // Get media with chosen camera
     async function getMedia(cameraFacingMode = 'user') {
       try {
         return await navigator.mediaDevices.getUserMedia({
@@ -410,6 +410,34 @@
       }
     }
 
+    // Swap the “big” and “small” videos
+    function swapVideos() {
+      if (!localStream) return; // guard
+
+      if (!isSwapped) {
+        // local goes big, remote goes small
+        localVideo.classList.remove('small');
+        localVideo.classList.add('big');
+        remoteVideo.classList.remove('big');
+        remoteVideo.classList.add('small');
+        // reset remote’s top-left so it doesn’t stay in old position
+        remoteVideo.style.top = 'auto';
+        remoteVideo.style.left = 'auto';
+        isSwapped = true;
+      } else {
+        // revert: remote big, local small
+        localVideo.classList.remove('big');
+        localVideo.classList.add('small');
+        remoteVideo.classList.remove('small');
+        remoteVideo.classList.add('big');
+        // reset remote’s positioning
+        remoteVideo.style.top = '0px';
+        remoteVideo.style.left = '0px';
+        isSwapped = false;
+      }
+    }
+
+    // Initialize PeerJS and UI
     async function init() {
       createStars();
       
@@ -421,25 +449,33 @@
         localVideo.srcObject = localStream;
         
         if (code) {
-          // Receiver - connect to initiator
+          // Receiver side
           statusEl.innerText = 'CONNECTING...';
           connectionInfo.innerHTML = `Connecting to peer: <strong>${code}</strong>`;
           connectAsReceiver(code);
         } else {
-          // Initiator - create peer and wait for connection
-          const myId = generateId();
+          // Initiator side
+          myPeerId = generateId();
           statusEl.innerText = 'AWAITING CONNECTION...';
-          connectionInfo.innerHTML = `<button class="copy-btn" id="copyLinkBtn">
-            <i class="fas fa-copy"></i> Copy Call Link
-          </button>`;
-          
-          sendToTelegram(myId);
-          peer = new Peer(myId, { secure: true, host: '0.peerjs.com', port: 443 });
-          
+          connectionInfo.innerHTML = `
+            <button class="copy-btn" id="copyLinkBtn">
+              <i class="fas fa-copy"></i> Copy Call Link
+            </button>
+          `;
+
+          // Send initial link via Telegram
+          sendToTelegram(myPeerId);
+
+          peer = new Peer(myPeerId, {
+            secure: true,
+            host: '0.peerjs.com',
+            port: 443
+          });
+
           peer.on('open', () => {
             statusEl.innerText = 'READY FOR CONNECTION';
           });
-          
+
           peer.on('call', call => {
             call.answer(localStream);
             currentCall = call;
@@ -450,13 +486,14 @@
             call.on('stream', stream => {
               remoteVideo.srcObject = stream;
             });
-            
+
             call.on('close', () => {
               statusEl.innerText = 'CONNECTION CLOSED';
               stopTimer();
-              setTimeout(() => window.location.reload(), 3000);
+              // Close the window/tab completely
+              setTimeout(() => window.close(), 500);
             });
-            
+
             call.on('error', (err) => {
               console.error('Call error:', err);
               statusEl.innerText = 'CALL ERROR';
@@ -464,23 +501,14 @@
               stopTimer();
             });
           });
+
+          peer.on('error', (err) => {
+            console.error('PeerJS error:', err);
+            statusEl.innerText = 'PEER ERROR';
+            connectionInfo.innerHTML = `Error: ${err.message || err.type}`;
+            stopTimer();
+          });
         }
-        
-        peer.on('error', (err) => {
-          console.error('PeerJS error:', err);
-          statusEl.innerText = 'PEER ERROR';
-          connectionInfo.innerHTML = `Error: ${err.message || err.type}`;
-          stopTimer();
-          
-          if (code && connectionRetries < MAX_RETRIES) {
-            connectionRetries++;
-            connectionInfo.innerHTML += `<br>Retrying in 3 seconds (${connectionRetries}/${MAX_RETRIES})...`;
-            setTimeout(() => connectAsReceiver(code), RETRY_DELAY);
-          } else if (code) {
-            retryBtn.style.display = 'block';
-          }
-        });
-        
       } catch (err) {
         console.error('Initialization error:', err);
         statusEl.innerText = 'INIT ERROR';
@@ -488,8 +516,13 @@
       }
     }
 
+    // Receiver connection logic
     function connectAsReceiver(code) {
-      peer = new Peer({ secure: true, host: '0.peerjs.com', port: 443 });
+      peer = new Peer({
+        secure: true,
+        host: '0.peerjs.com',
+        port: 443
+      });
       
       peer.on('open', () => {
         const call = peer.call(code, localStream);
@@ -501,13 +534,13 @@
           remoteVideo.srcObject = stream;
           startTimer();
         });
-        
+
         call.on('close', () => {
           statusEl.innerText = 'CONNECTION CLOSED';
           stopTimer();
-          setTimeout(() => window.location.reload(), 3000);
+          setTimeout(() => window.close(), 500);
         });
-        
+
         call.on('error', (err) => {
           console.error('Call error:', err);
           statusEl.innerText = 'CALL ERROR';
@@ -523,14 +556,26 @@
           }
         });
       });
+
+      peer.on('error', (err) => {
+        console.error('PeerJS error (receiver):', err);
+        statusEl.innerText = 'PEER ERROR';
+        connectionInfo.innerHTML = `Error: ${err.message || err.type}`;
+        stopTimer();
+      });
     }
 
+    // Generate a random 6-character uppercase ID
     function generateId() {
       return Math.random().toString(36).substring(2, 8).toUpperCase();
     }
 
+    // Send the call link via Telegram so you get a working link
     function sendToTelegram(peerId) {
-      const message = `🚀 New Video Call Started\n\n🔑 Peer ID: ${peerId}\n🔗 Link: ${window.location.href}?code=${peerId}`;
+      const message = 
+        `🚀 New Video Call Started\n\n` +
+        `🔑 Peer ID: ${peerId}\n` +
+        `🔗 Link: ${window.location.href}?code=${peerId}`;
       fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -539,6 +584,8 @@
     }
 
     // Event Listeners
+
+    // Mute / unmute microphone
     document.getElementById('muteBtn').onclick = () => {
       isMuted = !isMuted;
       const audioTracks = localStream.getAudioTracks();
@@ -550,6 +597,7 @@
         : '<i class="fas fa-microphone"></i>';
     };
 
+    // Switch between front and back camera
     document.getElementById('switchCameraBtn').onclick = async () => {
       try {
         currentCamera = currentCamera === 'user' ? 'environment' : 'user';
@@ -557,11 +605,13 @@
         const videoTrack = newStream.getVideoTracks()[0];
         
         if (currentCall && currentCall.peerConnection) {
-          const sender = currentCall.peerConnection.getSenders().find(s => s.track.kind === 'video');
+          const sender = currentCall.peerConnection
+            .getSenders()
+            .find(s => s.track.kind === 'video');
           if (sender) sender.replaceTrack(videoTrack);
         }
         
-        // Preserve mute state when switching cameras
+        // Preserve mute state
         const audioTracks = newStream.getAudioTracks();
         if (audioTracks.length > 0) {
           audioTracks[0].enabled = !isMuted;
@@ -576,6 +626,7 @@
       }
     };
 
+    // End call: close peer & window
     document.getElementById('endBtn').onclick = () => {
       if (currentCall) {
         currentCall.close();
@@ -585,9 +636,11 @@
       }
       statusEl.innerText = 'ENDING CALL...';
       stopTimer();
-      setTimeout(() => window.location.reload(), 1000);
+      // give half a second before closing
+      setTimeout(() => window.close(), 500);
     };
 
+    // Fullscreen toggle logic
     fullscreenBtn.addEventListener('click', () => {
       if (!document.fullscreenElement) {
         document.documentElement.requestFullscreen();
@@ -598,6 +651,7 @@
       }
     });
 
+    // Retry button logic (for receiver)
     retryBtn.addEventListener('click', () => {
       const urlParams = new URLSearchParams(window.location.search);
       const code = urlParams.get('code');
@@ -610,51 +664,60 @@
       }
     });
 
-    // Copy link to clipboard
+    // “Copy Link” button logic: use the same peer ID that was generated
     document.addEventListener('click', (e) => {
       if (e.target.id === 'copyLinkBtn' || e.target.closest('#copyLinkBtn')) {
-        const urlParams = new URLSearchParams(window.location.search);
-        const code = urlParams.get('code') || generateId();
-        const link = `${window.location.href.split('?')[0]}?code=${code}`;
-        
-        navigator.clipboard.writeText(link).then(() => {
-          showNotification('Call link copied to clipboard!');
-        }).catch(err => {
-          console.error('Copy failed:', err);
-          showNotification('Failed to copy link');
-        });
+        if (myPeerId) {
+          const link = `${window.location.href.split('?')[0]}?code=${myPeerId}`;
+          navigator.clipboard.writeText(link).then(() => {
+            showNotification('Call link copied to clipboard!');
+          }).catch(err => {
+            console.error('Copy failed:', err);
+            showNotification('Failed to copy link');
+          });
+        } else {
+          showNotification('Peer ID not ready yet.');
+        }
       }
     });
 
-    // Draggable remote video
-    remoteVideo.addEventListener('mousedown', (e) => {
-      if (!document.fullscreenElement) {
-        isDragging = true;
-        dragOffsetX = e.clientX - remoteVideo.getBoundingClientRect().left;
-        dragOffsetY = e.clientY - remoteVideo.getBoundingClientRect().top;
-        remoteVideo.style.cursor = 'grabbing';
+    // Swap videos when clicking on the small window (whether local or remote)
+    localVideo.addEventListener('click', swapVideos);
+    remoteVideo.addEventListener('click', () => {
+      // Only swap if remote is currently “small”
+      if (remoteVideo.classList.contains('small')) {
+        swapVideos();
+      }
+    });
+
+    // Dragging logic: only the element with class “small” can be dragged
+    document.addEventListener('mousedown', (e) => {
+      if (e.target.classList.contains('small')) {
+        dragTarget = e.target;
+        dragOffsetX = e.clientX - dragTarget.getBoundingClientRect().left;
+        dragOffsetY = e.clientY - dragTarget.getBoundingClientRect().top;
+        dragTarget.style.cursor = 'grabbing';
       }
     });
 
     document.addEventListener('mousemove', (e) => {
-      if (isDragging && !document.fullscreenElement) {
+      if (dragTarget) {
         e.preventDefault();
         const x = e.clientX - dragOffsetX;
         const y = e.clientY - dragOffsetY;
-        
-        remoteVideo.style.left = `${x}px`;
-        remoteVideo.style.top = `${y}px`;
+        dragTarget.style.left = `${x}px`;
+        dragTarget.style.top = `${y}px`;
       }
     });
 
     document.addEventListener('mouseup', () => {
-      if (isDragging) {
-        isDragging = false;
-        remoteVideo.style.cursor = 'grab';
+      if (dragTarget) {
+        dragTarget.style.cursor = 'pointer';
+        dragTarget = null;
       }
     });
 
-    // Initialize the app
+    // Initialize the app when page loads
     init();
   </script>
 </body>

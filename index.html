@@ -50,7 +50,7 @@
       position: relative;
     }
 
-    /* “Big” class for full-screen video (remote or swapped) */
+    /* Full-screen video (“big”) */
     .big {
       width: 100%;
       height: 100%;
@@ -62,10 +62,10 @@
       cursor: move;
     }
 
-    /* “Small” class for the floating window */
+    /* Floating small window: width fixed, height auto for aspect ratio */
     .small {
       width: 180px;
-      height: 120px;
+      height: auto; /* auto height so border wraps video */
       position: absolute;
       bottom: 130px;
       right: 20px;
@@ -76,6 +76,14 @@
       transition: all 0.3s;
       cursor: pointer;
       object-fit: contain;
+      background: #000; /* black background so portrait/landscape padding shows */
+    }
+
+    .small video {
+      width: 100%;
+      height: auto;
+      display: block;
+      border-radius: 6px; /* small rounding inside border */
     }
 
     .small:hover {
@@ -110,12 +118,12 @@
       letter-spacing: 1px;
     }
 
-    /* Timer styling: transparent background removed */
+    /* Timer: no background box */
     .timer {
-      /* background removed to avoid the “black box” */
       color: #00e4ff;
       font-size: 16px;
       font-weight: 500;
+      margin-top: 4px;
     }
 
     /* Controls panel (mute, switch camera, end call) */
@@ -269,10 +277,12 @@
   
   <div class="container">
     <div class="video-container">
-      <!-- Remote video starts as “big” -->
+      <!-- Remote video as “big” initially -->
       <video id="remoteVideo" class="big" autoplay playsinline></video>
-      <!-- Local video starts as “small” -->
-      <video id="localVideo" class="small" autoplay muted playsinline></video>
+      <!-- Local video as “small” initially -->
+      <div id="localWrapper" class="small">
+        <video id="localVideo" autoplay muted playsinline></video>
+      </div>
       
       <!-- Status and timer -->
       <div class="status-container">
@@ -312,17 +322,18 @@
     let callStartTime = 0;
     let timerInterval = null;
 
-    // To store the initiator’s peer ID for “copy link”
+    // Store initiator’s peer ID
     let myPeerId = null;
 
-    // Track swap state (false = remote big + local small; true = swapped)
+    // Track swap state (false: remote big + local small; true: swapped)
     let isSwapped = false;
 
-    // For dragging the small window (whichever video has “small” class)
+    // For dragging the small window
     let dragTarget = null;
     let dragOffsetX = 0, dragOffsetY = 0;
 
     const localVideo = document.getElementById('localVideo');
+    const localWrapper = document.getElementById('localWrapper');
     const remoteVideo = document.getElementById('remoteVideo');
     const statusEl = document.getElementById('status');
     const fullscreenBtn = document.getElementById('fullscreenBtn');
@@ -331,7 +342,7 @@
     const timerEl = document.getElementById('timer');
     const notification = document.getElementById('notification');
 
-    // Create stars for background
+    // Create stars background
     function createStars() {
       const starsContainer = document.getElementById('stars');
       const starCount = 150;
@@ -340,16 +351,13 @@
         const star = document.createElement('div');
         star.classList.add('star');
         
-        // Random position
         star.style.left = `${Math.random() * 100}%`;
         star.style.top = `${Math.random() * 100}%`;
         
-        // Random size
         const size = Math.random() * 3;
         star.style.width = `${size}px`;
         star.style.height = `${size}px`;
         
-        // Random animation
         star.style.setProperty('--duration', `${Math.random() * 3 + 2}s`);
         star.style.setProperty('--delay', `${Math.random() * 5}s`);
         
@@ -375,7 +383,7 @@
         const minutes = Math.floor((elapsed % 3600000) / 60000);
         const seconds = Math.floor((elapsed % 60000) / 1000);
         
-        timerEl.textContent = 
+        timerEl.textContent =
           `${hours.toString().padStart(2, '0')}:` +
           `${minutes.toString().padStart(2, '0')}:` +
           `${seconds.toString().padStart(2, '0')}`;
@@ -412,27 +420,23 @@
 
     // Swap the “big” and “small” videos
     function swapVideos() {
-      if (!localStream) return; // guard
+      if (!localStream) return;
 
       if (!isSwapped) {
-        // local goes big, remote goes small
-        localVideo.classList.remove('small');
-        localVideo.classList.add('big');
+        // Local → big, Remote → small (preserve remote’s last position)
+        localVideo.parentElement.classList.remove('small');
+        localVideo.parentElement.classList.add('big');
         remoteVideo.classList.remove('big');
         remoteVideo.classList.add('small');
-        // reset remote’s top-left so it doesn’t stay in old position
-        remoteVideo.style.top = 'auto';
-        remoteVideo.style.left = 'auto';
+        // Do NOT reset remoteVideo.style.top/left so dragged position stays
         isSwapped = true;
       } else {
-        // revert: remote big, local small
-        localVideo.classList.remove('big');
-        localVideo.classList.add('small');
+        // Remote → big, Local → small (preserve local’s last position)
+        localVideo.parentElement.classList.remove('big');
+        localVideo.parentElement.classList.add('small');
         remoteVideo.classList.remove('small');
         remoteVideo.classList.add('big');
-        // reset remote’s positioning
-        remoteVideo.style.top = '0px';
-        remoteVideo.style.left = '0px';
+        // Do NOT reset remoteVideo.style.top/left either
         isSwapped = false;
       }
     }
@@ -490,7 +494,6 @@
             call.on('close', () => {
               statusEl.innerText = 'CONNECTION CLOSED';
               stopTimer();
-              // Close the window/tab completely
               setTimeout(() => window.close(), 500);
             });
 
@@ -583,7 +586,7 @@
       }).catch(err => console.error('Telegram error:', err));
     }
 
-    // Event Listeners
+    // EVENT LISTENERS
 
     // Mute / unmute microphone
     document.getElementById('muteBtn').onclick = () => {
@@ -592,9 +595,20 @@
       if (audioTracks.length > 0) {
         audioTracks[0].enabled = !isMuted;
       }
-      document.getElementById('muteBtn').innerHTML = isMuted
-        ? '<i class="fas fa-microphone-slash"></i>'
-        : '<i class="fas fa-microphone"></i>';
+      const muteBtn = document.getElementById('muteBtn');
+      if (isMuted) {
+        // Make button red
+        muteBtn.style.background = 'rgb(200, 0, 0)';
+        muteBtn.style.borderColor = '#ff0000';
+        muteBtn.style.color = '#fff';
+        muteBtn.innerHTML = '<i class="fas fa-microphone-slash"></i>';
+      } else {
+        // Revert to original styling
+        muteBtn.style.background = 'rgba(30, 41, 59, 0.8)';
+        muteBtn.style.borderColor = '#00e4ff';
+        muteBtn.style.color = '#00e4ff';
+        muteBtn.innerHTML = '<i class="fas fa-microphone"></i>';
+      }
     };
 
     // Switch between front and back camera
@@ -636,7 +650,6 @@
       }
       statusEl.innerText = 'ENDING CALL...';
       stopTimer();
-      // give half a second before closing
       setTimeout(() => window.close(), 500);
     };
 
@@ -681,10 +694,9 @@
       }
     });
 
-    // Swap videos when clicking on the small window (whether local or remote)
-    localVideo.addEventListener('click', swapVideos);
+    // Swap videos when clicking on the small window (local or remote)
+    localWrapper.addEventListener('click', swapVideos);
     remoteVideo.addEventListener('click', () => {
-      // Only swap if remote is currently “small”
       if (remoteVideo.classList.contains('small')) {
         swapVideos();
       }
@@ -692,8 +704,8 @@
 
     // Dragging logic: only the element with class “small” can be dragged
     document.addEventListener('mousedown', (e) => {
-      if (e.target.classList.contains('small')) {
-        dragTarget = e.target;
+      if (e.target.closest('.small')) {
+        dragTarget = e.target.closest('.small');
         dragOffsetX = e.clientX - dragTarget.getBoundingClientRect().left;
         dragOffsetY = e.clientY - dragTarget.getBoundingClientRect().top;
         dragTarget.style.cursor = 'grabbing';

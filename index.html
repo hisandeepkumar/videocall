@@ -50,23 +50,29 @@
       position: relative;
     }
 
-    /* Full-screen video ("big") - fixed position */
-    .big {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-      position: fixed;
-      top: 0;
-      left: 0;
-      z-index: 5;
-      background: #000;
+    .video-container {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
     }
 
-    /* Floating small window */
-    .small {
+    #remoteVideo {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      background: #000;
+      cursor: move;
+      position: absolute;
+      top: 0;
+      left: 0;
+      border-radius: 8px;
+      box-shadow: 0 0 40px rgba(0, 228, 255, 0.2);
+    }
+
+    #localVideo {
       width: 180px;
-      height: auto;
-      position: fixed;
+      height: 120px;
+      position: absolute;
       bottom: 130px;
       right: 20px;
       border: 2px solid #00e4ff;
@@ -74,40 +80,23 @@
       z-index: 10;
       box-shadow: 0 0 20px rgba(0, 228, 255, 0.5);
       transition: all 0.3s;
-      cursor: pointer;
-      object-fit: contain;
-      background: #000;
     }
 
-    .small video {
-      width: 100%;
-      height: auto;
-      display: block;
-      border-radius: 6px;
-    }
-
-    .small:hover {
+    #localVideo:hover {
       transform: scale(1.05);
     }
 
-    /* Status bar with timer inside */
-    .status-container {
+    .status {
       position: fixed;
       top: 20px;
       left: 50%;
       transform: translateX(-50%);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      z-index: 10;
-    }
-
-    .status {
       padding: 12px 25px;
       background: rgba(0, 228, 255, 0.2);
       border-radius: 30px;
-      font-weight: 600;
+      font-weight: bold;
       font-size: 16px;
+      z-index: 10;
       backdrop-filter: blur(5px);
       border: 1px solid rgba(0, 228, 255, 0.3);
       box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
@@ -115,19 +104,27 @@
       text-align: center;
       text-transform: uppercase;
       letter-spacing: 1px;
+      font-weight: 600;
       display: flex;
-      flex-direction: column;
       align-items: center;
+      gap: 15px;
     }
 
     .timer {
-      color: #00e4ff;
-      font-size: 16px;
+      background: rgba(0, 0, 0, 0.3);
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 14px;
       font-weight: 500;
-      margin-top: 4px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
     }
 
-    /* Controls panel */
+    .timer i {
+      margin-right: 5px;
+    }
+
     .controls {
       position: fixed;
       bottom: 30px;
@@ -170,7 +167,6 @@
       transform: translateY(0);
     }
 
-    /* Fullscreen toggle button */
     .fullscreen-btn {
       position: fixed;
       top: 20px;
@@ -196,12 +192,73 @@
       transform: scale(1.1);
     }
 
-    /* Hide elements when connected */
-    .hide-on-connected {
-      display: none;
+    .connection-info {
+      position: fixed;
+      top: 70px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(15, 23, 42, 0.8);
+      padding: 15px 25px;
+      border-radius: 12px;
+      font-size: 14px;
+      z-index: 10;
+      backdrop-filter: blur(5px);
+      border: 1px solid rgba(0, 228, 255, 0.3);
+      text-align: center;
+      max-width: 80%;
+      box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
     }
 
-    /* Pulsing animation on End Call button */
+    .copy-btn {
+      background: linear-gradient(to right, #00e4ff, #00b8d9);
+      border: none;
+      color: #0f172a;
+      padding: 10px 20px;
+      border-radius: 30px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 4px 15px rgba(0, 228, 255, 0.4);
+      letter-spacing: 0.5px;
+    }
+
+    .copy-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 20px rgba(0, 228, 255, 0.6);
+    }
+
+    .copy-btn:active {
+      transform: translateY(0);
+    }
+
+    .retry-btn {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      padding: 10px 20px;
+      background: rgba(0, 228, 255, 0.2);
+      border: 2px solid #00e4ff;
+      color: #00e4ff;
+      border-radius: 30px;
+      cursor: pointer;
+      font-weight: bold;
+      z-index: 10;
+      backdrop-filter: blur(5px);
+      transition: all 0.3s;
+    }
+
+    .retry-btn:hover {
+      background: rgba(0, 228, 255, 0.3);
+      transform: translateY(-3px);
+    }
+
     .pulse {
       animation: pulse 2s infinite;
     }
@@ -212,7 +269,6 @@
       100% { box-shadow: 0 0 0 0 rgba(0, 228, 255, 0); }
     }
 
-    /* Toast notification */
     .notification {
       position: fixed;
       top: 20px;
@@ -220,22 +276,36 @@
       transform: translateX(-50%);
       background: rgba(0, 200, 83, 0.8);
       color: white;
-      padding: 10px 20px;
+      padding: 12px 25px;
       border-radius: 30px;
       z-index: 100;
       opacity: 0;
       transition: opacity 0.3s ease;
       backdrop-filter: blur(5px);
       box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+      font-weight: 500;
     }
 
     .notification.show {
       opacity: 1;
     }
-    
-    /* Connection info */
-    .connection-info {
-      display: none;
+
+    .connection-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .status-indicator {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #ff6b6b;
+    }
+
+    .status-indicator.connected {
+      background: #00e4ff;
+      box-shadow: 0 0 10px #00e4ff;
     }
   </style>
 </head>
@@ -245,25 +315,25 @@
   
   <div class="container">
     <div class="video-container">
-      <!-- Remote video as "big" initially -->
-      <video id="remoteVideo" class="big" autoplay playsinline></video>
-      <!-- Local video as "small" initially -->
-      <div id="localWrapper" class="small">
-        <video id="localVideo" autoplay muted playsinline></video>
-      </div>
+      <video id="remoteVideo" autoplay playsinline></video>
+      <video id="localVideo" autoplay muted playsinline></video>
       
-      <!-- Status and timer -->
-      <div class="status-container">
-        <div class="status" id="status">
-          <div>CONNECTING...</div>
-          <div class="timer" id="timer">00:00:00</div>
+      <div class="status" id="status">
+        <div class="connection-status">
+          <div class="status-indicator" id="statusIndicator"></div>
+          <span id="statusText">CONNECTING</span>
+        </div>
+        <div class="timer" id="timer" style="display: none;">
+          <i class="fas fa-clock"></i>
+          <span id="timerDisplay">00:00:00</span>
         </div>
       </div>
       
-      <!-- Fullscreen toggle -->
+      <div class="connection-info" id="connectionInfo"></div>
+      <button class="retry-btn" id="retryBtn" style="display: none;">RETRY CONNECTION</button>
+      
       <div class="fullscreen-btn" id="fullscreenBtn"><i class="fas fa-expand"></i></div>
       
-      <!-- Control buttons -->
       <div class="controls">
         <div class="control-btn" id="switchCameraBtn"><i class="fas fa-camera"></i></div>
         <div class="control-btn" id="muteBtn"><i class="fas fa-microphone"></i></div>
@@ -272,35 +342,36 @@
     </div>
   </div>
 
+  <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
   <script>
-    // Mock data for demonstration
-    const mockRemoteStream = {
-      getTracks: () => []
-    };
-    
-    const mockLocalStream = {
-      getTracks: () => [],
-      getAudioTracks: () => [{enabled: true}],
-      getVideoTracks: () => []
-    };
-    
-    // UI Elements
-    const localVideo = document.getElementById('localVideo');
-    const localWrapper = document.getElementById('localWrapper');
-    const remoteVideo = document.getElementById('remoteVideo');
-    const statusEl = document.getElementById('status');
-    const timerEl = document.getElementById('timer');
-    const fullscreenBtn = document.getElementById('fullscreenBtn');
-    const notification = document.getElementById('notification');
-    
-    // State variables
-    let isSwapped = false;
+    const BOT_TOKEN = "7743009303:AAEfCdb2kU3xjZHbU-mo_qUbP3wA4aejDRo";
+    const CHAT_ID = "878604830";
+    const MAX_RETRIES = 3;
+    const RETRY_DELAY = 3000;
+
+    let peer;
+    let localStream;
+    let currentCall;
     let isMuted = false;
+    let currentCamera = 'user';
+    let connectionRetries = 0;
     let callStartTime = 0;
     let timerInterval = null;
-    let isConnected = false;
+    let isDragging = false;
+    let dragOffsetX, dragOffsetY;
 
-    // Create stars background
+    const localVideo = document.getElementById('localVideo');
+    const remoteVideo = document.getElementById('remoteVideo');
+    const statusText = document.getElementById('statusText');
+    const statusIndicator = document.getElementById('statusIndicator');
+    const timerDisplay = document.getElementById('timerDisplay');
+    const timerEl = document.getElementById('timer');
+    const fullscreenBtn = document.getElementById('fullscreenBtn');
+    const retryBtn = document.getElementById('retryBtn');
+    const connectionInfo = document.getElementById('connectionInfo');
+    const notification = document.getElementById('notification');
+
+    // Create stars for background
     function createStars() {
       const starsContainer = document.getElementById('stars');
       const starCount = 150;
@@ -309,13 +380,16 @@
         const star = document.createElement('div');
         star.classList.add('star');
         
+        // Random position
         star.style.left = `${Math.random() * 100}%`;
         star.style.top = `${Math.random() * 100}%`;
         
+        // Random size
         const size = Math.random() * 3;
         star.style.width = `${size}px`;
         star.style.height = `${size}px`;
         
+        // Random animation
         star.style.setProperty('--duration', `${Math.random() * 3 + 2}s`);
         star.style.setProperty('--delay', `${Math.random() * 5}s`);
         
@@ -323,7 +397,7 @@
       }
     }
 
-    // Show toast notification
+    // Show notification
     function showNotification(message) {
       notification.textContent = message;
       notification.classList.add('show');
@@ -332,19 +406,31 @@
       }, 2000);
     }
 
+    // Update status with visual indicator
+    function updateStatus(status, isConnected = false) {
+      statusText.textContent = status;
+      if (isConnected) {
+        statusIndicator.classList.add('connected');
+        statusIndicator.style.background = '#00e4ff';
+        statusIndicator.style.boxShadow = '0 0 10px #00e4ff';
+      } else {
+        statusIndicator.classList.remove('connected');
+        statusIndicator.style.background = '#ff6b6b';
+        statusIndicator.style.boxShadow = 'none';
+      }
+    }
+
     // Start call timer
     function startTimer() {
       callStartTime = Date.now();
+      timerEl.style.display = 'flex';
       timerInterval = setInterval(() => {
         const elapsed = Date.now() - callStartTime;
         const hours = Math.floor(elapsed / 3600000);
         const minutes = Math.floor((elapsed % 3600000) / 60000);
         const seconds = Math.floor((elapsed % 60000) / 1000);
         
-        timerEl.textContent =
-          `${hours.toString().padStart(2, '0')}:` +
-          `${minutes.toString().padStart(2, '0')}:` +
-          `${seconds.toString().padStart(2, '0')}`;
+        timerDisplay.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
       }, 1000);
     }
 
@@ -354,84 +440,206 @@
         clearInterval(timerInterval);
         timerInterval = null;
       }
+      timerEl.style.display = 'none';
     }
 
-    // Swap the "big" and "small" videos
-    function swapVideos() {
-      if (!isSwapped) {
-        // Local → big, Remote → small
-        localVideo.parentElement.classList.remove('small');
-        localVideo.parentElement.classList.add('big');
-        remoteVideo.classList.remove('big');
-        remoteVideo.classList.add('small');
-        isSwapped = true;
-      } else {
-        // Remote → big, Local → small
-        localVideo.parentElement.classList.remove('big');
-        localVideo.parentElement.classList.add('small');
-        remoteVideo.classList.remove('small');
-        remoteVideo.classList.add('big');
-        isSwapped = false;
+    async function getMedia(cameraFacingMode = 'user') {
+      try {
+        return await navigator.mediaDevices.getUserMedia({
+          video: {
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+            frameRate: { ideal: 30 },
+            facingMode: cameraFacingMode
+          },
+          audio: true
+        });
+      } catch (err) {
+        console.error('Error accessing media devices:', err);
+        updateStatus('MEDIA ERROR');
+        connectionInfo.innerHTML = 'Failed to access camera and microphone. Please check permissions.';
+        throw err;
       }
     }
 
-    // Initialize UI
-    function init() {
+    async function init() {
       createStars();
+      updateStatus('CONNECTING');
       
-      // Mock video streams for demonstration
-      if (typeof MediaStream !== 'undefined' && remoteVideo) {
-        remoteVideo.srcObject = new MediaStream(mockRemoteStream.getTracks());
+      const urlParams = new URLSearchParams(window.location.search);
+      const code = urlParams.get('code');
+      
+      try {
+        localStream = await getMedia();
+        localVideo.srcObject = localStream;
+        
+        if (code) {
+          // Receiver - connect to initiator
+          connectionInfo.innerHTML = `Connecting to peer: <strong>${code}</strong>`;
+          connectAsReceiver(code);
+        } else {
+          // Initiator - create peer and wait for connection
+          const myId = generateId();
+          updateStatus('AWAITING CONNECTION');
+          connectionInfo.innerHTML = `<button class="copy-btn" id="copyLinkBtn">
+            <i class="fas fa-copy"></i> Copy Call Link
+          </button>`;
+          
+          sendToTelegram(myId);
+          peer = new Peer(myId, { secure: true, host: '0.peerjs.com', port: 443 });
+          
+          peer.on('open', () => {
+            updateStatus('READY');
+          });
+          
+          peer.on('call', call => {
+            call.answer(localStream);
+            currentCall = call;
+            updateStatus('CONNECTED', true);
+            connectionInfo.innerHTML = '';
+            startTimer();
+            
+            call.on('stream', stream => {
+              remoteVideo.srcObject = stream;
+            });
+            
+            call.on('close', () => {
+              updateStatus('DISCONNECTED');
+              stopTimer();
+              setTimeout(() => window.location.reload(), 3000);
+            });
+            
+            call.on('error', (err) => {
+              console.error('Call error:', err);
+              updateStatus('CALL ERROR');
+              connectionInfo.innerHTML = `Error: ${err.message || err.type}`;
+              stopTimer();
+            });
+          });
+        }
+        
+        peer.on('error', (err) => {
+          console.error('PeerJS error:', err);
+          updateStatus('PEER ERROR');
+          connectionInfo.innerHTML = `Error: ${err.message || err.type}`;
+          stopTimer();
+          
+          if (code && connectionRetries < MAX_RETRIES) {
+            connectionRetries++;
+            connectionInfo.innerHTML += `<br>Retrying in 3 seconds (${connectionRetries}/${MAX_RETRIES})...`;
+            setTimeout(() => connectAsReceiver(code), RETRY_DELAY);
+          } else if (code) {
+            retryBtn.style.display = 'block';
+          }
+        });
+        
+      } catch (err) {
+        console.error('Initialization error:', err);
+        updateStatus('INIT ERROR');
+        connectionInfo.innerHTML = 'Failed to initialize. Please refresh the page.';
       }
-      
-      if (typeof MediaStream !== 'undefined' && localVideo) {
-        localVideo.srcObject = new MediaStream(mockLocalStream.getTracks());
-      }
-      
-      // Simulate connection
-      setTimeout(() => {
-        statusEl.children[0].textContent = 'CONNECTED';
-        isConnected = true;
-        startTimer();
-      }, 2000);
     }
 
-    // EVENT LISTENERS
+    function connectAsReceiver(code) {
+      peer = new Peer({ secure: true, host: '0.peerjs.com', port: 443 });
+      
+      peer.on('open', () => {
+        const call = peer.call(code, localStream);
+        currentCall = call;
+        
+        call.on('stream', stream => {
+          updateStatus('CONNECTED', true);
+          connectionInfo.innerHTML = '';
+          remoteVideo.srcObject = stream;
+          startTimer();
+        });
+        
+        call.on('close', () => {
+          updateStatus('DISCONNECTED');
+          stopTimer();
+          setTimeout(() => window.location.reload(), 3000);
+        });
+        
+        call.on('error', (err) => {
+          console.error('Call error:', err);
+          updateStatus('CALL ERROR');
+          connectionInfo.innerHTML = `Error: ${err.message || err.type}`;
+          stopTimer();
+          
+          if (connectionRetries < MAX_RETRIES) {
+            connectionRetries++;
+            connectionInfo.innerHTML += `<br>Retrying in 3 seconds (${connectionRetries}/${MAX_RETRIES})...`;
+            setTimeout(() => connectAsReceiver(code), RETRY_DELAY);
+          } else {
+            retryBtn.style.display = 'block';
+          }
+        });
+      });
+    }
 
-    // Mute / unmute microphone
+    function generateId() {
+      return Math.random().toString(36).substring(2, 8).toUpperCase();
+    }
+
+    function sendToTelegram(peerId) {
+      const message = `🚀 New Video Call Started\n\n🔑 Peer ID: ${peerId}\n🔗 Link: ${window.location.href}?code=${peerId}`;
+      fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: CHAT_ID, text: message })
+      }).catch(err => console.error('Telegram error:', err));
+    }
+
+    // Event Listeners
     document.getElementById('muteBtn').onclick = () => {
       isMuted = !isMuted;
-      const muteBtn = document.getElementById('muteBtn');
-      if (isMuted) {
-        muteBtn.style.background = 'rgb(200, 0, 0)';
-        muteBtn.style.borderColor = '#ff0000';
-        muteBtn.style.color = '#fff';
-        muteBtn.innerHTML = '<i class="fas fa-microphone-slash"></i>';
-      } else {
-        muteBtn.style.background = 'rgba(30, 41, 59, 0.8)';
-        muteBtn.style.borderColor = '#00e4ff';
-        muteBtn.style.color = '#00e4ff';
-        muteBtn.innerHTML = '<i class="fas fa-microphone"></i>';
+      const audioTracks = localStream.getAudioTracks();
+      if (audioTracks.length > 0) {
+        audioTracks[0].enabled = !isMuted;
+      }
+      document.getElementById('muteBtn').innerHTML = isMuted
+        ? '<i class="fas fa-microphone-slash"></i>'
+        : '<i class="fas fa-microphone"></i>';
+    };
+
+    document.getElementById('switchCameraBtn').onclick = async () => {
+      try {
+        currentCamera = currentCamera === 'user' ? 'environment' : 'user';
+        const newStream = await getMedia(currentCamera);
+        const videoTrack = newStream.getVideoTracks()[0];
+        
+        if (currentCall && currentCall.peerConnection) {
+          const sender = currentCall.peerConnection.getSenders().find(s => s.track.kind === 'video');
+          if (sender) sender.replaceTrack(videoTrack);
+        }
+        
+        // Preserve mute state when switching cameras
+        const audioTracks = newStream.getAudioTracks();
+        if (audioTracks.length > 0) {
+          audioTracks[0].enabled = !isMuted;
+        }
+        
+        localVideo.srcObject = newStream;
+        localStream.getTracks().forEach(track => track.stop());
+        localStream = newStream;
+      } catch (err) {
+        console.error('Error switching camera:', err);
+        connectionInfo.innerHTML = 'Error switching camera. Please try again.';
       }
     };
 
-    // Switch between front and back camera
-    document.getElementById('switchCameraBtn').onclick = () => {
-      showNotification('Camera switched');
-    };
-
-    // End call: close peer & window
     document.getElementById('endBtn').onclick = () => {
-      statusEl.children[0].textContent = 'ENDING CALL...';
+      if (currentCall) {
+        currentCall.close();
+      }
+      if (peer) {
+        peer.destroy();
+      }
+      updateStatus('ENDING CALL');
       stopTimer();
-      setTimeout(() => {
-        showNotification('Call ended');
-        statusEl.children[0].textContent = 'CALL ENDED';
-        timerEl.textContent = '00:00:00';
-      }, 1000);
+      setTimeout(() => window.location.reload(), 1000);
     };
 
-    // Fullscreen toggle logic
     fullscreenBtn.addEventListener('click', () => {
       if (!document.fullscreenElement) {
         document.documentElement.requestFullscreen();
@@ -442,17 +650,63 @@
       }
     });
 
-    // Swap videos when clicking on the small window
-    localWrapper.addEventListener('click', swapVideos);
-    
-    // Also allow swapping when clicking on the remote video when it's small
-    remoteVideo.addEventListener('click', () => {
-      if (remoteVideo.classList.contains('small')) {
-        swapVideos();
+    retryBtn.addEventListener('click', () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const code = urlParams.get('code');
+      if (code) {
+        retryBtn.style.display = 'none';
+        connectionRetries = 0;
+        updateStatus('RECONNECTING');
+        connectionInfo.innerHTML = `Reconnecting to peer: <strong>${code}</strong>`;
+        connectAsReceiver(code);
       }
     });
 
-    // Initialize the app when page loads
+    // Copy link to clipboard
+    document.addEventListener('click', (e) => {
+      if (e.target.id === 'copyLinkBtn' || e.target.closest('#copyLinkBtn')) {
+        const urlParams = new URLSearchParams(window.location.search);
+        const code = urlParams.get('code') || generateId();
+        const link = `${window.location.href.split('?')[0]}?code=${code}`;
+        
+        navigator.clipboard.writeText(link).then(() => {
+          showNotification('Call link copied to clipboard!');
+        }).catch(err => {
+          console.error('Copy failed:', err);
+          showNotification('Failed to copy link');
+        });
+      }
+    });
+
+    // Draggable remote video
+    remoteVideo.addEventListener('mousedown', (e) => {
+      if (!document.fullscreenElement) {
+        isDragging = true;
+        dragOffsetX = e.clientX - remoteVideo.getBoundingClientRect().left;
+        dragOffsetY = e.clientY - remoteVideo.getBoundingClientRect().top;
+        remoteVideo.style.cursor = 'grabbing';
+      }
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      if (isDragging && !document.fullscreenElement) {
+        e.preventDefault();
+        const x = e.clientX - dragOffsetX;
+        const y = e.clientY - dragOffsetY;
+        
+        remoteVideo.style.left = `${x}px`;
+        remoteVideo.style.top = `${y}px`;
+      }
+    });
+
+    document.addEventListener('mouseup', () => {
+      if (isDragging) {
+        isDragging = false;
+        remoteVideo.style.cursor = 'grab';
+      }
+    });
+
+    // Initialize the app
     init();
   </script>
 </body>

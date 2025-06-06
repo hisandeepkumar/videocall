@@ -467,11 +467,11 @@
     function updateStatus(status, isConnected = false) {
       statusText.textContent = status;
       if (isConnected) {
-        statusIndicator.classList.add('connected');
+        statusIndicator.classList.add('');
         statusIndicator.style.background = '#00e4ff';
         statusIndicator.style.boxShadow = '0 0 10px #00e4ff';
       } else {
-        statusIndicator.classList.remove('connected');
+        statusIndicator.classList.remove('');
         statusIndicator.style.background = '#ff6b6b';
         statusIndicator.style.boxShadow = 'none';
       }

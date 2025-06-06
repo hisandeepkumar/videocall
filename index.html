@@ -78,33 +78,52 @@
        - No border
        - Static (no dragging/zoom)
     ---------------------------------------------------------- */
+/* ────────────────────────────────────────────
+   Remote video: Default (Fallback)
+──────────────────────────────────────────── */
 #remoteVideo {
   position: absolute;
-  
-  /* Status bar के ठीक नीचे से शुरू हो */
-  top: 100px;        /* आप status की सटीक हाइट के मुताबिक इसे एडजस्ट कर सकते हैं */
-  
-  /* Controls के ठीक ऊपर खत्म हो */
-  bottom: 100px;    /* आप control buttons की हाइट+मर्जिन के मुताबिक इसे एडजस्ट कर सकते हैं */
-  
-  /* Horizontal center में फिक्स रखें */
   left: 50%;
   transform: translateX(-50%);
-  
-  /* Width जितनी आपको चाहिए—यहां 80% रखा है parent container (video-container) के हिसाब से */
-  width: 80%;
-  
-  /* Height auto रखी है ताकि aspect ratio बने रहे; लेकिन top/bottom से मिलकर area फ़िल हो जाए */
-  height: auto;
-  
   object-fit: cover;
   background: #000;
-  
-  /* वही border और glow effect जो localVideo में है */
   border: 2px solid #00e4ff;
   box-shadow: 0 0 20px rgba(0, 228, 255, 0.5);
-  
-  z-index: 1; /* जैसा पहले था */
+  z-index: 1;
+}
+
+/* ────────────────────────────────────────────
+   Portrait Mode (ऊँची स्क्रीन, narrow width)
+──────────────────────────────────────────── */
+@media (orientation: portrait) {
+  #remoteVideo {
+    /* Status bar के नीचे से शुरू */
+    top: 80px;      /* ज़रूरत अनुसार adjust करें */
+    /* Controls के ठीक ऊपर खत्म */
+    bottom: 140px;  /* ज़रूरत अनुसार adjust करें */
+    /* चौड़ाई ज़्यादा रखी—portrait में थोड़ी चौड़ाई कम हो तो ठीक रहेगा */
+    width: 90%;
+    /* ऊँचाई auto: top+bottom constraints में फिट हो जाएगा */
+    height: auto;
+    max-height: calc(100% - (80px + 140px));
+  }
+}
+
+/* ────────────────────────────────────────────
+   Landscape Mode (चौड़ी स्क्रीन, कम ऊँचाई)
+──────────────────────────────────────────── */
+@media (orientation: landscape) {
+  #remoteVideo {
+    /* Status bar के नीचे से शुरू */
+    top: 60px;      /* ज़रूरत अनुसार adjust करें */
+    /* Controls के ठीक ऊपर खत्म */
+    bottom: 100px;  /* ज़रूरत अनुसार adjust करें */
+    /* चौड़ाई moderate रखें—landscape में ज़्यादा चौड़ाई स्क्रीन लेगी */
+    width: 80%;
+    /* ऊँचाई auto: top+bottom constraints में फिट हो जाएगा */
+    height: auto;
+    max-height: calc(100% - (60px + 100px));
+  }
 }
     /* ----------------------------------------------------------
        LOCAL VIDEO (small floating window)

@@ -528,7 +528,7 @@
         });
       } catch (err) {
         console.error('Error accessing media devices:', err);
-        updateStatus('MEDIA ERROR');
+        
         connectionInfo.innerHTML =
           'Failed to access camera and microphone. Please check permissions.';
         throw err;

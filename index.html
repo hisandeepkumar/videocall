@@ -638,7 +638,7 @@
         updateStatus('CONNECTING');
 
         call.on('stream', stream => {
-          updateStatus('CONNECTED', true);
+          updateStatus('', true);
           connectionInfo.innerHTML = '';
           remoteVideo.srcObject = stream;
           startTimer();

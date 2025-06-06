@@ -50,23 +50,23 @@
       position: relative;
     }
 
-    /* Full-screen video (“big”) */
+    /* Full-screen video ("big") - fixed position */
     .big {
       width: 100%;
       height: 100%;
-      object-fit: contain; /* keep aspect ratio */
-      position: absolute;
+      object-fit: contain;
+      position: fixed;
       top: 0;
       left: 0;
       z-index: 5;
-      cursor: move;
+      background: #000;
     }
 
-    /* Floating small window: width fixed, height auto for aspect ratio */
+    /* Floating small window */
     .small {
       width: 180px;
-      height: auto; /* auto height so border wraps video */
-      position: absolute;
+      height: auto;
+      position: fixed;
       bottom: 130px;
       right: 20px;
       border: 2px solid #00e4ff;
@@ -76,23 +76,23 @@
       transition: all 0.3s;
       cursor: pointer;
       object-fit: contain;
-      background: #000; /* black background so portrait/landscape padding shows */
+      background: #000;
     }
 
     .small video {
       width: 100%;
       height: auto;
       display: block;
-      border-radius: 6px; /* small rounding inside border */
+      border-radius: 6px;
     }
 
     .small:hover {
       transform: scale(1.05);
     }
 
-    /* Status bar (CONNECTING, CONNECTED, etc.) */
+    /* Status bar with timer inside */
     .status-container {
-      position: absolute;
+      position: fixed;
       top: 20px;
       left: 50%;
       transform: translateX(-50%);
@@ -100,7 +100,6 @@
       flex-direction: column;
       align-items: center;
       z-index: 10;
-      gap: 8px;
     }
 
     .status {
@@ -116,9 +115,11 @@
       text-align: center;
       text-transform: uppercase;
       letter-spacing: 1px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
 
-    /* Timer: no background box */
     .timer {
       color: #00e4ff;
       font-size: 16px;
@@ -126,7 +127,7 @@
       margin-top: 4px;
     }
 
-    /* Controls panel (mute, switch camera, end call) */
+    /* Controls panel */
     .controls {
       position: fixed;
       bottom: 30px;
@@ -195,47 +196,9 @@
       transform: scale(1.1);
     }
 
-    /* Connection info panel */
-    .connection-info {
-      position: fixed;
-      top: 70px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(15, 23, 42, 0.8);
-      padding: 15px 25px;
-      border-radius: 12px;
-      font-size: 14px;
-      z-index: 10;
-      backdrop-filter: blur(5px);
-      border: 1px solid rgba(0, 228, 255, 0.3);
-      text-align: center;
-      max-width: 80%;
-      box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    /* Retry button when connection fails */
-    .retry-btn {
-      position: fixed;
-      top: 20px;
-      left: 20px;
-      padding: 10px 20px;
-      background: rgba(0, 228, 255, 0.2);
-      border: 2px solid #00e4ff;
-      color: #00e4ff;
-      border-radius: 30px;
-      cursor: pointer;
-      font-weight: bold;
-      z-index: 10;
-      backdrop-filter: blur(5px);
-      transition: all 0.3s;
-    }
-
-    .retry-btn:hover {
-      background: rgba(0, 228, 255, 0.3);
-      transform: translateY(-3px);
+    /* Hide elements when connected */
+    .hide-on-connected {
+      display: none;
     }
 
     /* Pulsing animation on End Call button */
@@ -249,7 +212,7 @@
       100% { box-shadow: 0 0 0 0 rgba(0, 228, 255, 0); }
     }
 
-    /* Toast notification for “Link copied” */
+    /* Toast notification */
     .notification {
       position: fixed;
       top: 20px;
@@ -269,6 +232,11 @@
     .notification.show {
       opacity: 1;
     }
+    
+    /* Connection info */
+    .connection-info {
+      display: none;
+    }
   </style>
 </head>
 <body>
@@ -277,22 +245,20 @@
   
   <div class="container">
     <div class="video-container">
-      <!-- Remote video as “big” initially -->
+      <!-- Remote video as "big" initially -->
       <video id="remoteVideo" class="big" autoplay playsinline></video>
-      <!-- Local video as “small” initially -->
+      <!-- Local video as "small" initially -->
       <div id="localWrapper" class="small">
         <video id="localVideo" autoplay muted playsinline></video>
       </div>
       
       <!-- Status and timer -->
       <div class="status-container">
-        <div class="status" id="status">CONNECTING...</div>
-        <div class="timer" id="timer">00:00:00</div>
+        <div class="status" id="status">
+          <div>CONNECTING...</div>
+          <div class="timer" id="timer">00:00:00</div>
+        </div>
       </div>
-      
-      <!-- Connection info and retry -->
-      <div class="connection-info" id="connectionInfo"></div>
-      <button class="retry-btn" id="retryBtn" style="display: none;">RETRY CONNECTION</button>
       
       <!-- Fullscreen toggle -->
       <div class="fullscreen-btn" id="fullscreenBtn"><i class="fas fa-expand"></i></div>
@@ -306,41 +272,33 @@
     </div>
   </div>
 
-  <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
   <script>
-    const BOT_TOKEN = "7743009303:AAEfCdb2kU3xjZHbU-mo_qUbP3wA4aejDRo";
-    const CHAT_ID = "878604830";
-    const MAX_RETRIES = 3;
-    const RETRY_DELAY = 3000;
-
-    let peer;
-    let localStream;
-    let currentCall;
-    let isMuted = false;
-    let currentCamera = 'user';
-    let connectionRetries = 0;
-    let callStartTime = 0;
-    let timerInterval = null;
-
-    // Store initiator’s peer ID
-    let myPeerId = null;
-
-    // Track swap state (false: remote big + local small; true: swapped)
-    let isSwapped = false;
-
-    // For dragging the small window
-    let dragTarget = null;
-    let dragOffsetX = 0, dragOffsetY = 0;
-
+    // Mock data for demonstration
+    const mockRemoteStream = {
+      getTracks: () => []
+    };
+    
+    const mockLocalStream = {
+      getTracks: () => [],
+      getAudioTracks: () => [{enabled: true}],
+      getVideoTracks: () => []
+    };
+    
+    // UI Elements
     const localVideo = document.getElementById('localVideo');
     const localWrapper = document.getElementById('localWrapper');
     const remoteVideo = document.getElementById('remoteVideo');
     const statusEl = document.getElementById('status');
-    const fullscreenBtn = document.getElementById('fullscreenBtn');
-    const retryBtn = document.getElementById('retryBtn');
-    const connectionInfo = document.getElementById('connectionInfo');
     const timerEl = document.getElementById('timer');
+    const fullscreenBtn = document.getElementById('fullscreenBtn');
     const notification = document.getElementById('notification');
+    
+    // State variables
+    let isSwapped = false;
+    let isMuted = false;
+    let callStartTime = 0;
+    let timerInterval = null;
+    let isConnected = false;
 
     // Create stars background
     function createStars() {
@@ -398,192 +356,44 @@
       }
     }
 
-    // Get media with chosen camera
-    async function getMedia(cameraFacingMode = 'user') {
-      try {
-        return await navigator.mediaDevices.getUserMedia({
-          video: {
-            width: { ideal: 1280 },
-            height: { ideal: 720 },
-            frameRate: { ideal: 30 },
-            facingMode: cameraFacingMode
-          },
-          audio: true
-        });
-      } catch (err) {
-        console.error('Error accessing media devices:', err);
-        statusEl.innerText = 'MEDIA ERROR';
-        connectionInfo.innerHTML = 'Failed to access camera and microphone. Please check permissions.';
-        throw err;
-      }
-    }
-
-    // Swap the “big” and “small” videos
+    // Swap the "big" and "small" videos
     function swapVideos() {
-      if (!localStream) return;
-
       if (!isSwapped) {
-        // Local → big, Remote → small (preserve remote’s last position)
+        // Local → big, Remote → small
         localVideo.parentElement.classList.remove('small');
         localVideo.parentElement.classList.add('big');
         remoteVideo.classList.remove('big');
         remoteVideo.classList.add('small');
-        // Do NOT reset remoteVideo.style.top/left so dragged position stays
         isSwapped = true;
       } else {
-        // Remote → big, Local → small (preserve local’s last position)
+        // Remote → big, Local → small
         localVideo.parentElement.classList.remove('big');
         localVideo.parentElement.classList.add('small');
         remoteVideo.classList.remove('small');
         remoteVideo.classList.add('big');
-        // Do NOT reset remoteVideo.style.top/left either
         isSwapped = false;
       }
     }
 
-    // Initialize PeerJS and UI
-    async function init() {
+    // Initialize UI
+    function init() {
       createStars();
       
-      const urlParams = new URLSearchParams(window.location.search);
-      const code = urlParams.get('code');
-      
-      try {
-        localStream = await getMedia();
-        localVideo.srcObject = localStream;
-        
-        if (code) {
-          // Receiver side
-          statusEl.innerText = 'CONNECTING...';
-          connectionInfo.innerHTML = `Connecting to peer: <strong>${code}</strong>`;
-          connectAsReceiver(code);
-        } else {
-          // Initiator side
-          myPeerId = generateId();
-          statusEl.innerText = 'AWAITING CONNECTION...';
-          connectionInfo.innerHTML = `
-            <button class="copy-btn" id="copyLinkBtn">
-              <i class="fas fa-copy"></i> Copy Call Link
-            </button>
-          `;
-
-          // Send initial link via Telegram
-          sendToTelegram(myPeerId);
-
-          peer = new Peer(myPeerId, {
-            secure: true,
-            host: '0.peerjs.com',
-            port: 443
-          });
-
-          peer.on('open', () => {
-            statusEl.innerText = 'READY FOR CONNECTION';
-          });
-
-          peer.on('call', call => {
-            call.answer(localStream);
-            currentCall = call;
-            statusEl.innerText = 'CONNECTED';
-            connectionInfo.innerHTML = '';
-            startTimer();
-            
-            call.on('stream', stream => {
-              remoteVideo.srcObject = stream;
-            });
-
-            call.on('close', () => {
-              statusEl.innerText = 'CONNECTION CLOSED';
-              stopTimer();
-              setTimeout(() => window.close(), 500);
-            });
-
-            call.on('error', (err) => {
-              console.error('Call error:', err);
-              statusEl.innerText = 'CALL ERROR';
-              connectionInfo.innerHTML = `Error: ${err.message || err.type}`;
-              stopTimer();
-            });
-          });
-
-          peer.on('error', (err) => {
-            console.error('PeerJS error:', err);
-            statusEl.innerText = 'PEER ERROR';
-            connectionInfo.innerHTML = `Error: ${err.message || err.type}`;
-            stopTimer();
-          });
-        }
-      } catch (err) {
-        console.error('Initialization error:', err);
-        statusEl.innerText = 'INIT ERROR';
-        connectionInfo.innerHTML = 'Failed to initialize. Please refresh the page.';
+      // Mock video streams for demonstration
+      if (typeof MediaStream !== 'undefined' && remoteVideo) {
+        remoteVideo.srcObject = new MediaStream(mockRemoteStream.getTracks());
       }
-    }
-
-    // Receiver connection logic
-    function connectAsReceiver(code) {
-      peer = new Peer({
-        secure: true,
-        host: '0.peerjs.com',
-        port: 443
-      });
       
-      peer.on('open', () => {
-        const call = peer.call(code, localStream);
-        currentCall = call;
-        
-        call.on('stream', stream => {
-          statusEl.innerText = 'CONNECTED';
-          connectionInfo.innerHTML = '';
-          remoteVideo.srcObject = stream;
-          startTimer();
-        });
-
-        call.on('close', () => {
-          statusEl.innerText = 'CONNECTION CLOSED';
-          stopTimer();
-          setTimeout(() => window.close(), 500);
-        });
-
-        call.on('error', (err) => {
-          console.error('Call error:', err);
-          statusEl.innerText = 'CALL ERROR';
-          connectionInfo.innerHTML = `Error: ${err.message || err.type}`;
-          stopTimer();
-          
-          if (connectionRetries < MAX_RETRIES) {
-            connectionRetries++;
-            connectionInfo.innerHTML += `<br>Retrying in 3 seconds (${connectionRetries}/${MAX_RETRIES})...`;
-            setTimeout(() => connectAsReceiver(code), RETRY_DELAY);
-          } else {
-            retryBtn.style.display = 'block';
-          }
-        });
-      });
-
-      peer.on('error', (err) => {
-        console.error('PeerJS error (receiver):', err);
-        statusEl.innerText = 'PEER ERROR';
-        connectionInfo.innerHTML = `Error: ${err.message || err.type}`;
-        stopTimer();
-      });
-    }
-
-    // Generate a random 6-character uppercase ID
-    function generateId() {
-      return Math.random().toString(36).substring(2, 8).toUpperCase();
-    }
-
-    // Send the call link via Telegram so you get a working link
-    function sendToTelegram(peerId) {
-      const message = 
-        `🚀 New Video Call Started\n\n` +
-        `🔑 Peer ID: ${peerId}\n` +
-        `🔗 Link: ${window.location.href}?code=${peerId}`;
-      fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chat_id: CHAT_ID, text: message })
-      }).catch(err => console.error('Telegram error:', err));
+      if (typeof MediaStream !== 'undefined' && localVideo) {
+        localVideo.srcObject = new MediaStream(mockLocalStream.getTracks());
+      }
+      
+      // Simulate connection
+      setTimeout(() => {
+        statusEl.children[0].textContent = 'CONNECTED';
+        isConnected = true;
+        startTimer();
+      }, 2000);
     }
 
     // EVENT LISTENERS
@@ -591,19 +401,13 @@
     // Mute / unmute microphone
     document.getElementById('muteBtn').onclick = () => {
       isMuted = !isMuted;
-      const audioTracks = localStream.getAudioTracks();
-      if (audioTracks.length > 0) {
-        audioTracks[0].enabled = !isMuted;
-      }
       const muteBtn = document.getElementById('muteBtn');
       if (isMuted) {
-        // Make button red
         muteBtn.style.background = 'rgb(200, 0, 0)';
         muteBtn.style.borderColor = '#ff0000';
         muteBtn.style.color = '#fff';
         muteBtn.innerHTML = '<i class="fas fa-microphone-slash"></i>';
       } else {
-        // Revert to original styling
         muteBtn.style.background = 'rgba(30, 41, 59, 0.8)';
         muteBtn.style.borderColor = '#00e4ff';
         muteBtn.style.color = '#00e4ff';
@@ -612,45 +416,19 @@
     };
 
     // Switch between front and back camera
-    document.getElementById('switchCameraBtn').onclick = async () => {
-      try {
-        currentCamera = currentCamera === 'user' ? 'environment' : 'user';
-        const newStream = await getMedia(currentCamera);
-        const videoTrack = newStream.getVideoTracks()[0];
-        
-        if (currentCall && currentCall.peerConnection) {
-          const sender = currentCall.peerConnection
-            .getSenders()
-            .find(s => s.track.kind === 'video');
-          if (sender) sender.replaceTrack(videoTrack);
-        }
-        
-        // Preserve mute state
-        const audioTracks = newStream.getAudioTracks();
-        if (audioTracks.length > 0) {
-          audioTracks[0].enabled = !isMuted;
-        }
-        
-        localVideo.srcObject = newStream;
-        localStream.getTracks().forEach(track => track.stop());
-        localStream = newStream;
-      } catch (err) {
-        console.error('Error switching camera:', err);
-        connectionInfo.innerHTML = 'Error switching camera. Please try again.';
-      }
+    document.getElementById('switchCameraBtn').onclick = () => {
+      showNotification('Camera switched');
     };
 
     // End call: close peer & window
     document.getElementById('endBtn').onclick = () => {
-      if (currentCall) {
-        currentCall.close();
-      }
-      if (peer) {
-        peer.destroy();
-      }
-      statusEl.innerText = 'ENDING CALL...';
+      statusEl.children[0].textContent = 'ENDING CALL...';
       stopTimer();
-      setTimeout(() => window.close(), 500);
+      setTimeout(() => {
+        showNotification('Call ended');
+        statusEl.children[0].textContent = 'CALL ENDED';
+        timerEl.textContent = '00:00:00';
+      }, 1000);
     };
 
     // Fullscreen toggle logic
@@ -664,68 +442,13 @@
       }
     });
 
-    // Retry button logic (for receiver)
-    retryBtn.addEventListener('click', () => {
-      const urlParams = new URLSearchParams(window.location.search);
-      const code = urlParams.get('code');
-      if (code) {
-        retryBtn.style.display = 'none';
-        connectionRetries = 0;
-        statusEl.innerText = 'RECONNECTING...';
-        connectionInfo.innerHTML = `Reconnecting to peer: <strong>${code}</strong>`;
-        connectAsReceiver(code);
-      }
-    });
-
-    // “Copy Link” button logic: use the same peer ID that was generated
-    document.addEventListener('click', (e) => {
-      if (e.target.id === 'copyLinkBtn' || e.target.closest('#copyLinkBtn')) {
-        if (myPeerId) {
-          const link = `${window.location.href.split('?')[0]}?code=${myPeerId}`;
-          navigator.clipboard.writeText(link).then(() => {
-            showNotification('Call link copied to clipboard!');
-          }).catch(err => {
-            console.error('Copy failed:', err);
-            showNotification('Failed to copy link');
-          });
-        } else {
-          showNotification('Peer ID not ready yet.');
-        }
-      }
-    });
-
-    // Swap videos when clicking on the small window (local or remote)
+    // Swap videos when clicking on the small window
     localWrapper.addEventListener('click', swapVideos);
+    
+    // Also allow swapping when clicking on the remote video when it's small
     remoteVideo.addEventListener('click', () => {
       if (remoteVideo.classList.contains('small')) {
         swapVideos();
-      }
-    });
-
-    // Dragging logic: only the element with class “small” can be dragged
-    document.addEventListener('mousedown', (e) => {
-      if (e.target.closest('.small')) {
-        dragTarget = e.target.closest('.small');
-        dragOffsetX = e.clientX - dragTarget.getBoundingClientRect().left;
-        dragOffsetY = e.clientY - dragTarget.getBoundingClientRect().top;
-        dragTarget.style.cursor = 'grabbing';
-      }
-    });
-
-    document.addEventListener('mousemove', (e) => {
-      if (dragTarget) {
-        e.preventDefault();
-        const x = e.clientX - dragOffsetX;
-        const y = e.clientY - dragOffsetY;
-        dragTarget.style.left = `${x}px`;
-        dragTarget.style.top = `${y}px`;
-      }
-    });
-
-    document.addEventListener('mouseup', () => {
-      if (dragTarget) {
-        dragTarget.style.cursor = 'pointer';
-        dragTarget = null;
       }
     });
 

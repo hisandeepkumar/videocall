@@ -78,17 +78,34 @@
        - No border
        - Static (no dragging/zoom)
     ---------------------------------------------------------- */
-    #remoteVideo {
-      width: 80%;
-      height: 80%;
-      object-fit: cover;
-      background: #000;
-      position: absolute;
-     
-      border: 2px solid #00e4ff;
-      z-index: 1;   /* Beneath all floating UI but above background */
-    }
-
+#remoteVideo {
+  position: absolute;
+  
+  /* Status bar के ठीक नीचे से शुरू हो */
+  top: 80px;        /* आप status की सटीक हाइट के मुताबिक इसे एडजस्ट कर सकते हैं */
+  
+  /* Controls के ठीक ऊपर खत्म हो */
+  bottom: 120px;    /* आप control buttons की हाइट+मर्जिन के मुताबिक इसे एडजस्ट कर सकते हैं */
+  
+  /* Horizontal center में फिक्स रखें */
+  left: 50%;
+  transform: translateX(-50%);
+  
+  /* Width जितनी आपको चाहिए—यहां 80% रखा है parent container (video-container) के हिसाब से */
+  width: 80%;
+  
+  /* Height auto रखी है ताकि aspect ratio बने रहे; लेकिन top/bottom से मिलकर area फ़िल हो जाए */
+  height: auto;
+  
+  object-fit: cover;
+  background: #000;
+  
+  /* वही border और glow effect जो localVideo में है */
+  border: 2px solid #00e4ff;
+  box-shadow: 0 0 20px rgba(0, 228, 255, 0.5);
+  
+  z-index: 1; /* जैसा पहले था */
+}
     /* ----------------------------------------------------------
        LOCAL VIDEO (small floating window)
        - Positioned above controls (bottom‐right)

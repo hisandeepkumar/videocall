@@ -87,8 +87,14 @@
   transform: translateX(-50%);
   object-fit: cover;
   background: #000;
+
+  /* Glowing border */
   border: 2px solid #00e4ff;
   box-shadow: 0 0 20px rgba(0, 228, 255, 0.5);
+
+  /* Rounded corners */
+  border-radius: 8px;
+
   z-index: 1;
 }
 
@@ -101,11 +107,14 @@
     top: 80px;      /* ज़रूरत अनुसार adjust करें */
     /* Controls के ठीक ऊपर खत्म */
     bottom: 140px;  /* ज़रूरत अनुसार adjust करें */
-    /* चौड़ाई ज़्यादा रखी—portrait में थोड़ी चौड़ाई कम हो तो ठीक रहेगा */
+
+    /* चौड़ाई portrait में */
     width: 90%;
-    /* ऊँचाई auto: top+bottom constraints में फिट हो जाएगा */
     height: auto;
     max-height: calc(100% - (80px + 140px));
+
+    /* वही rounded corners */
+    border-radius: 8px;
   }
 }
 
@@ -118,11 +127,14 @@
     top: 60px;      /* ज़रूरत अनुसार adjust करें */
     /* Controls के ठीक ऊपर खत्म */
     bottom: 100px;  /* ज़रूरत अनुसार adjust करें */
-    /* चौड़ाई moderate रखें—landscape में ज़्यादा चौड़ाई स्क्रीन लेगी */
+
+    /* चौड़ाई landscape में */
     width: 80%;
-    /* ऊँचाई auto: top+bottom constraints में फिट हो जाएगा */
     height: auto;
     max-height: calc(100% - (60px + 100px));
+
+    /* वही rounded corners */
+    border-radius: 8px;
   }
 }
     /* ----------------------------------------------------------

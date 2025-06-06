@@ -6,19 +6,19 @@
   <title>Quantum Video Call</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <style>
-    body {
+    * {
       margin: 0;
       padding: 0;
-      background-color: #0d1117;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: linear-gradient(135deg, #0f172a, #1e293b);
       color: #fff;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       overflow: hidden;
-      display: flex;
-      justify-content: center;
-      align-items: center;
       height: 100vh;
       position: relative;
-      background: linear-gradient(135deg, #0f172a, #1e293b);
     }
 
     .stars {
@@ -43,17 +43,83 @@
       50% { opacity: 1; }
     }
 
-    video {
-      width: 100vw;
+    .container {
+      display: flex;
+      flex-direction: column;
       height: 100vh;
+      position: relative;
+    }
+
+    .video-container {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+
+    #remoteVideo {
+      width: 100%;
+      height: 100%;
       object-fit: cover;
+      background: #000;
+      cursor: move;
       position: absolute;
       top: 0;
       left: 0;
-      z-index: 0;
-      background: #000;
+    }
+
+    #localVideo {
+      width: 180px;
+      height: 120px;
+      position: absolute;
+      bottom: 130px;
+      right: 20px;
+      border: 2px solid #00e4ff;
       border-radius: 8px;
-      box-shadow: 0 0 30px rgba(0, 228, 255, 0.3);
+      z-index: 10;
+      box-shadow: 0 0 20px rgba(0, 228, 255, 0.5);
+      transition: all 0.3s;
+    }
+
+    #localVideo:hover {
+      transform: scale(1.05);
+    }
+
+    .status-container {
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      z-index: 10;
+      gap: 8px;
+    }
+
+    .status {
+      padding: 12px 25px;
+      background: rgba(0, 228, 255, 0.2);
+      border-radius: 30px;
+      font-weight: bold;
+      font-size: 16px;
+      backdrop-filter: blur(5px);
+      border: 1px solid rgba(0, 228, 255, 0.3);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+      min-width: 220px;
+      text-align: center;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: 600;
+    }
+
+    .timer {
+      background: rgba(0, 0, 0, 0.5);
+      padding: 6px 15px;
+      border-radius: 20px;
+      font-size: 16px;
+      font-weight: 500;
+      backdrop-filter: blur(5px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
     .controls {
@@ -98,27 +164,6 @@
       transform: translateY(0);
     }
 
-    .status {
-      position: fixed;
-      top: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      padding: 12px 25px;
-      background: rgba(0, 228, 255, 0.2);
-      border-radius: 30px;
-      font-weight: bold;
-      font-size: 16px;
-      z-index: 10;
-      backdrop-filter: blur(5px);
-      border: 1px solid rgba(0, 228, 255, 0.3);
-      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-      min-width: 220px;
-      text-align: center;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      font-weight: 600;
-    }
-
     .fullscreen-btn {
       position: fixed;
       top: 20px;
@@ -159,34 +204,29 @@
       text-align: center;
       max-width: 80%;
       box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
     }
 
-    .connection-info a {
-      color: #00e4ff;
-      text-decoration: none;
-      font-weight: bold;
-      word-break: break-all;
-    }
-
-    .connection-info a:hover {
-      text-decoration: underline;
-    }
-
-    #localVideo {
-      width: 180px;
-      height: 120px;
-      position: fixed;
-      bottom: 130px;
-      right: 20px;
-      border: 2px solid #00e4ff;
-      border-radius: 8px;
-      z-index: 10;
-      box-shadow: 0 0 20px rgba(0, 228, 255, 0.5);
+    .copy-btn {
+      background: rgba(0, 228, 255, 0.2);
+      border: 1px solid #00e4ff;
+      color: #fff;
+      padding: 8px 15px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-weight: 500;
       transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
     }
 
-    #localVideo:hover {
-      transform: scale(1.05);
+    .copy-btn:hover {
+      background: rgba(0, 228, 255, 0.3);
+      transform: translateY(-2px);
     }
 
     .retry-btn {
@@ -219,23 +259,53 @@
       70% { box-shadow: 0 0 0 15px rgba(0, 228, 255, 0); }
       100% { box-shadow: 0 0 0 0 rgba(0, 228, 255, 0); }
     }
+
+    .notification {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 200, 83, 0.8);
+      color: white;
+      padding: 10px 20px;
+      border-radius: 30px;
+      z-index: 100;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      backdrop-filter: blur(5px);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    }
+
+    .notification.show {
+      opacity: 1;
+    }
   </style>
 </head>
 <body>
   <div class="stars" id="stars"></div>
-  <div class="status" id="status">CONNECTING...</div>
-  <div class="connection-info" id="connectionInfo"></div>
-  <button class="retry-btn" id="retryBtn" style="display: none;">RETRY CONNECTION</button>
+  <div class="notification" id="notification">Link copied to clipboard!</div>
   
-  <video id="remoteVideo" autoplay playsinline></video>
-  <video id="localVideo" autoplay muted playsinline></video>
-  
-  <div class="fullscreen-btn" id="fullscreenBtn"><i class="fas fa-expand"></i></div>
-  
-  <div class="controls">
-    <div class="control-btn" id="switchCameraBtn"><i class="fas fa-camera"></i></div>
-    <div class="control-btn" id="muteBtn"><i class="fas fa-microphone"></i></div>
-    <div class="control-btn pulse" id="endBtn"><i class="fas fa-phone-slash"></i></div>
+  <div class="container">
+    <div class="video-container">
+      <video id="remoteVideo" autoplay playsinline></video>
+      <video id="localVideo" autoplay muted playsinline></video>
+      
+      <div class="status-container">
+        <div class="status" id="status">CONNECTING...</div>
+        <div class="timer" id="timer">00:00:00</div>
+      </div>
+      
+      <div class="connection-info" id="connectionInfo"></div>
+      <button class="retry-btn" id="retryBtn" style="display: none;">RETRY CONNECTION</button>
+      
+      <div class="fullscreen-btn" id="fullscreenBtn"><i class="fas fa-expand"></i></div>
+      
+      <div class="controls">
+        <div class="control-btn" id="switchCameraBtn"><i class="fas fa-camera"></i></div>
+        <div class="control-btn" id="muteBtn"><i class="fas fa-microphone"></i></div>
+        <div class="control-btn pulse" id="endBtn"><i class="fas fa-phone-slash"></i></div>
+      </div>
+    </div>
   </div>
 
   <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
@@ -243,7 +313,7 @@
     const BOT_TOKEN = "7743009303:AAEfCdb2kU3xjZHbU-mo_qUbP3wA4aejDRo";
     const CHAT_ID = "878604830";
     const MAX_RETRIES = 3;
-    const RETRY_DELAY = 3000; // 3 seconds
+    const RETRY_DELAY = 3000;
 
     let peer;
     let localStream;
@@ -251,6 +321,10 @@
     let isMuted = false;
     let currentCamera = 'user';
     let connectionRetries = 0;
+    let callStartTime = 0;
+    let timerInterval = null;
+    let isDragging = false;
+    let dragOffsetX, dragOffsetY;
 
     const localVideo = document.getElementById('localVideo');
     const remoteVideo = document.getElementById('remoteVideo');
@@ -258,11 +332,13 @@
     const fullscreenBtn = document.getElementById('fullscreenBtn');
     const retryBtn = document.getElementById('retryBtn');
     const connectionInfo = document.getElementById('connectionInfo');
+    const timerEl = document.getElementById('timer');
+    const notification = document.getElementById('notification');
 
     // Create stars for background
     function createStars() {
       const starsContainer = document.getElementById('stars');
-      const starCount = 100;
+      const starCount = 150;
       
       for (let i = 0; i < starCount; i++) {
         const star = document.createElement('div');
@@ -282,6 +358,36 @@
         star.style.setProperty('--delay', `${Math.random() * 5}s`);
         
         starsContainer.appendChild(star);
+      }
+    }
+
+    // Show notification
+    function showNotification(message) {
+      notification.textContent = message;
+      notification.classList.add('show');
+      setTimeout(() => {
+        notification.classList.remove('show');
+      }, 2000);
+    }
+
+    // Start call timer
+    function startTimer() {
+      callStartTime = Date.now();
+      timerInterval = setInterval(() => {
+        const elapsed = Date.now() - callStartTime;
+        const hours = Math.floor(elapsed / 3600000);
+        const minutes = Math.floor((elapsed % 3600000) / 60000);
+        const seconds = Math.floor((elapsed % 60000) / 1000);
+        
+        timerEl.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+      }, 1000);
+    }
+
+    // Stop call timer
+    function stopTimer() {
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
       }
     }
 
@@ -323,8 +429,9 @@
           // Initiator - create peer and wait for connection
           const myId = generateId();
           statusEl.innerText = 'AWAITING CONNECTION...';
-          connectionInfo.innerHTML = `Share this link with your peer:<br>
-            <a href="${window.location.href}?code=${myId}" id="callLink">${window.location.href}?code=${myId}</a>`;
+          connectionInfo.innerHTML = `<button class="copy-btn" id="copyLinkBtn">
+            <i class="fas fa-copy"></i> Copy Call Link
+          </button>`;
           
           sendToTelegram(myId);
           peer = new Peer(myId, { secure: true, host: '0.peerjs.com', port: 443 });
@@ -337,7 +444,8 @@
             call.answer(localStream);
             currentCall = call;
             statusEl.innerText = 'CONNECTED';
-            connectionInfo.innerHTML = 'Connection established!';
+            connectionInfo.innerHTML = '';
+            startTimer();
             
             call.on('stream', stream => {
               remoteVideo.srcObject = stream;
@@ -345,7 +453,7 @@
             
             call.on('close', () => {
               statusEl.innerText = 'CONNECTION CLOSED';
-              connectionInfo.innerHTML = 'The call has ended.';
+              stopTimer();
               setTimeout(() => window.location.reload(), 3000);
             });
             
@@ -353,6 +461,7 @@
               console.error('Call error:', err);
               statusEl.innerText = 'CALL ERROR';
               connectionInfo.innerHTML = `Error: ${err.message || err.type}`;
+              stopTimer();
             });
           });
         }
@@ -361,6 +470,7 @@
           console.error('PeerJS error:', err);
           statusEl.innerText = 'PEER ERROR';
           connectionInfo.innerHTML = `Error: ${err.message || err.type}`;
+          stopTimer();
           
           if (code && connectionRetries < MAX_RETRIES) {
             connectionRetries++;
@@ -387,13 +497,14 @@
         
         call.on('stream', stream => {
           statusEl.innerText = 'CONNECTED';
-          connectionInfo.innerHTML = 'Connection established!';
+          connectionInfo.innerHTML = '';
           remoteVideo.srcObject = stream;
+          startTimer();
         });
         
         call.on('close', () => {
           statusEl.innerText = 'CONNECTION CLOSED';
-          connectionInfo.innerHTML = 'The call has ended.';
+          stopTimer();
           setTimeout(() => window.location.reload(), 3000);
         });
         
@@ -401,6 +512,7 @@
           console.error('Call error:', err);
           statusEl.innerText = 'CALL ERROR';
           connectionInfo.innerHTML = `Error: ${err.message || err.type}`;
+          stopTimer();
           
           if (connectionRetries < MAX_RETRIES) {
             connectionRetries++;
@@ -429,7 +541,10 @@
     // Event Listeners
     document.getElementById('muteBtn').onclick = () => {
       isMuted = !isMuted;
-      localStream.getAudioTracks()[0].enabled = !isMuted;
+      const audioTracks = localStream.getAudioTracks();
+      if (audioTracks.length > 0) {
+        audioTracks[0].enabled = !isMuted;
+      }
       document.getElementById('muteBtn').innerHTML = isMuted
         ? '<i class="fas fa-microphone-slash"></i>'
         : '<i class="fas fa-microphone"></i>';
@@ -444,6 +559,12 @@
         if (currentCall && currentCall.peerConnection) {
           const sender = currentCall.peerConnection.getSenders().find(s => s.track.kind === 'video');
           if (sender) sender.replaceTrack(videoTrack);
+        }
+        
+        // Preserve mute state when switching cameras
+        const audioTracks = newStream.getAudioTracks();
+        if (audioTracks.length > 0) {
+          audioTracks[0].enabled = !isMuted;
         }
         
         localVideo.srcObject = newStream;
@@ -463,6 +584,7 @@
         peer.destroy();
       }
       statusEl.innerText = 'ENDING CALL...';
+      stopTimer();
       setTimeout(() => window.location.reload(), 1000);
     };
 
@@ -490,16 +612,45 @@
 
     // Copy link to clipboard
     document.addEventListener('click', (e) => {
-      if (e.target.id === 'callLink') {
-        e.preventDefault();
-        const link = e.target.href;
+      if (e.target.id === 'copyLinkBtn' || e.target.closest('#copyLinkBtn')) {
+        const urlParams = new URLSearchParams(window.location.search);
+        const code = urlParams.get('code') || generateId();
+        const link = `${window.location.href.split('?')[0]}?code=${code}`;
+        
         navigator.clipboard.writeText(link).then(() => {
-          const originalText = connectionInfo.innerHTML;
-          connectionInfo.innerHTML = 'Link copied to clipboard!';
-          setTimeout(() => {
-            connectionInfo.innerHTML = originalText;
-          }, 2000);
+          showNotification('Call link copied to clipboard!');
+        }).catch(err => {
+          console.error('Copy failed:', err);
+          showNotification('Failed to copy link');
         });
+      }
+    });
+
+    // Draggable remote video
+    remoteVideo.addEventListener('mousedown', (e) => {
+      if (!document.fullscreenElement) {
+        isDragging = true;
+        dragOffsetX = e.clientX - remoteVideo.getBoundingClientRect().left;
+        dragOffsetY = e.clientY - remoteVideo.getBoundingClientRect().top;
+        remoteVideo.style.cursor = 'grabbing';
+      }
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      if (isDragging && !document.fullscreenElement) {
+        e.preventDefault();
+        const x = e.clientX - dragOffsetX;
+        const y = e.clientY - dragOffsetY;
+        
+        remoteVideo.style.left = `${x}px`;
+        remoteVideo.style.top = `${y}px`;
+      }
+    });
+
+    document.addEventListener('mouseup', () => {
+      if (isDragging) {
+        isDragging = false;
+        remoteVideo.style.cursor = 'grab';
       }
     });
 

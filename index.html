@@ -645,7 +645,7 @@
             // ANSWER incoming call
             call.answer(localStream);
             currentCall = call;
-            updateStatus('CONNECTED', true);
+            updateStatus('', true);
             connectionInfo.innerHTML = '';
             startTimer();
             triggerVibration();

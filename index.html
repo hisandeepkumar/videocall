@@ -87,13 +87,13 @@
       top: 0;
       left: 0;
       border: none; /* Removed border */
-      z-index: 1;   /* Below all floating UI but above background */
+      z-index: 1;   /* Beneath all floating UI but above background */
     }
 
     /* ----------------------------------------------------------
        LOCAL VIDEO (small floating window)
        - Positioned above controls (bottom‐right)
-       - Same z-index as controls so it stays on top of remote
+       - Same z-index as fullscreen button
     ---------------------------------------------------------- */
     #localVideo {
       width: 180px;
@@ -103,7 +103,8 @@
       right: 50px;
       border: 2px solid #00e4ff;
       border-radius: 8px;
-      z-index: 10; /* Same as controls */
+      object-fit: cover;
+      z-index: 10; /* Same as fullscreen button */
       box-shadow: 0 0 20px rgba(0, 228, 255, 0.5);
       transition: all 0.3s;
     }
@@ -217,7 +218,7 @@
       justify-content: center;
       font-size: 20px;
       cursor: pointer;
-      z-index: 10; /* Above remote video */
+      z-index: 10; /* Same as localVideo */
       transition: all 0.3s;
       box-shadow: 0 0 15px rgba(0, 228, 255, 0.3);
     }
@@ -228,16 +229,15 @@
     }
 
     /* ----------------------------------------------------------
-       CONNECTION INFO (hidden background)
-       - We keep the copy button but make container transparent
+       CONNECTION INFO (transparent background)
     ---------------------------------------------------------- */
     .connection-info {
       position: fixed;
       top: 70px;
       left: 50%;
       transform: translateX(-50%);
-      background: transparent; /* Hide the black box */
-      padding: 0; /* No extra padding */
+      background: transparent; /* Hide black box */
+      padding: 0;
       border-radius: 0;
       font-size: 14px;
       z-index: 10;
@@ -342,7 +342,7 @@
         </div>
       </div>
 
-      <!-- CONNECTION INFO (transparent container for copy button) -->
+      <!-- CONNECTION INFO (transparent, holds copy button) -->
       <div class="connection-info" id="connectionInfo"></div>
 
       <!-- FULLSCREEN TOGGLE (top right) -->
@@ -400,24 +400,16 @@
     function createStars() {
       const starsContainer = document.getElementById('stars');
       const starCount = 150;
-
       for (let i = 0; i < starCount; i++) {
         const star = document.createElement('div');
         star.classList.add('star');
-
-        // Random position
         star.style.left = `${Math.random() * 100}%`;
         star.style.top = `${Math.random() * 100}%`;
-
-        // Random size
         const size = Math.random() * 3;
         star.style.width = `${size}px`;
         star.style.height = `${size}px`;
-
-        // Random animation
         star.style.setProperty('--duration', `${Math.random() * 3 + 2}s`);
         star.style.setProperty('--delay', `${Math.random() * 5}s`);
-
         starsContainer.appendChild(star);
       }
     }
@@ -454,7 +446,6 @@
         const hours = Math.floor(elapsed / 3600000);
         const minutes = Math.floor((elapsed % 3600000) / 60000);
         const seconds = Math.floor((elapsed % 60000) / 1000);
-
         timerDisplay.textContent =
           `${hours.toString().padStart(2, '0')}:` +
           `${minutes.toString().padStart(2, '0')}:` +
@@ -537,14 +528,18 @@
             connectionInfo.innerHTML = ''; // Hide black box once connected
             startTimer();
 
+            // When remote stream arrives:
             call.on('stream', stream => {
               remoteVideo.srcObject = stream;
             });
 
+            // Call closed by remote:
             call.on('close', () => {
               updateStatus('DISCONNECTED');
               stopTimer();
-              setTimeout(() => window.location.reload(), 3000);
+              setTimeout(() => {
+                window.close(); // Close this tab/window
+              }, 500);
             });
 
             call.on('error', (err) => {
@@ -598,7 +593,9 @@
         call.on('close', () => {
           updateStatus('DISCONNECTED');
           stopTimer();
-          setTimeout(() => window.location.reload(), 3000);
+          setTimeout(() => {
+            window.close(); // Close this tab/window
+          }, 500);
         });
 
         call.on('error', (err) => {
@@ -697,7 +694,7 @@
       }
     };
 
-    // END CALL
+    // END CALL: close call + close this tab/window
     document.getElementById('endBtn').onclick = () => {
       if (currentCall) {
         currentCall.close();
@@ -707,7 +704,9 @@
       }
       updateStatus('ENDING CALL');
       stopTimer();
-      setTimeout(() => window.location.reload(), 1000);
+      setTimeout(() => {
+        window.close(); // Close this tab/window
+      }, 200);
     };
 
     // FULLSCREEN TOGGLE
@@ -721,7 +720,7 @@
       }
     });
 
-    // Remove draggable/zoom functionality: no more drag listeners on remoteVideo
+    // No draggable/zoom functionality for #remoteVideo
 
     // Launch initialization
     init();

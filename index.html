@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quantum Video Call - New Theme</title>
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+  />
+  <style>
+    /* ----------------------------------------------------------
+       RESET & BODY
+    ---------------------------------------------------------- */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #0b0f1e;
+      color: #e0e0e0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      overflow: hidden;
+      height: 100vh;
+      position: relative;
+    }
+
+    /* ----------------------------------------------------------
+       ANIMATED GRADIENT BACKGROUND (PURPLE ➔ TEAL) 
+    ---------------------------------------------------------- */
+    .gradient-background {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      background: linear-gradient(120deg,
+        #2a0a4b 0%,
+        #5c0a91 30%,
+        #0a8f91 60%,
+        #0a4b5c 100%);
+      background-size: 400% 400%;
+      animation: gradientShift 25s ease infinite;
+    }
+
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    /* ----------------------------------------------------------
+       MODERN GLASS-STYLE UI ELEMENTS 
+    ---------------------------------------------------------- */
+    .container {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .video-container {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      border-radius: 24px;
+      margin: 20px;
+      background: rgba(10, 12, 20, 0.4);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4),
+                  inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+    }
+
+    /* ----------------------------------------------------------
+       VIDEO ELEMENTS (FULLSCREEN & LOCAL PREVIEW)
+    ---------------------------------------------------------- */
+    #remoteVideo {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      background: #000;
+      border-radius: 24px;
+      z-index: 1;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+      cursor: default;
+    }
+
+    #localVideo {
+      height: 160px;
+      width: auto;
+      max-width: 200px;
+      position: absolute;
+      bottom: 170px;
+      right: 40px;
+      border-radius: 24px;
+      object-fit: cover;
+      z-index: 10;
+      background: #000;
+      transition: all 0.3s;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+      cursor: pointer;
+    }
+
+    #localVideo:hover {
+      transform: scale(1.07);
+    }
+
+    /* ----------------------------------------------------------
+       STATUS BAR (TOP CENTER)
+    ---------------------------------------------------------- */
+    .status {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 14px 32px;
+      background: rgba(15, 18, 28, 0.75);
+      border-radius: 30px;
+      font-weight: 600;
+      font-size: 15px;
+      z-index: 10;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
+      min-width: 220px;
+      text-align: center;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #e0e0e0;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .timer {
+      background: rgba(5, 8, 15, 0.6);
+      padding: 6px 16px;
+      border-radius: 22px;
+      font-size: 13px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #b0e0e6;
+    }
+
+    .timer i {
+      margin-right: 6px;
+      color: #10f0d8;
+    }
+
+    /* ----------------------------------------------------------
+       CONTROLS (BOTTOM CENTER)
+    ---------------------------------------------------------- */
+    .controls {
+      position: fixed;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 28px;
+      z-index: 10;
+      background: rgba(15, 18, 28, 0.8);
+      padding: 20px 34px;
+      border-radius: 54px;
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
+    }
+
+    .control-btn {
+      width: 76px;
+      height: 76px;
+      border-radius: 50%;
+      background: rgba(20, 24, 36, 0.85);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: #e0e0e0;
+      font-size: 26px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+    }
+
+    .control-btn:hover {
+      background: rgba(30, 34, 50, 0.9);
+      transform: translateY(-6px);
+      box-shadow: 0 16px 50px rgba(0, 0, 0, 0.5);
+    }
+
+    .control-btn:active {
+      transform: translateY(0) scale(0.94);
+    }
+
+    #endBtn {
+      background: rgba(200, 30, 50, 0.9);
+    }
+
+    #endBtn:hover {
+      background: rgba(220, 50, 70, 0.9);
+    }
+
+    /* ----------------------------------------------------------
+       FULLSCREEN BUTTON (TOP RIGHT)
+    ---------------------------------------------------------- */
+    .fullscreen-btn {
+      position: fixed;
+      top: 24px;
+      right: 24px;
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: rgba(20, 24, 36, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: #e0e0e0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      cursor: pointer;
+      z-index: 10;
+      transition: all 0.3s;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+    }
+
+    .fullscreen-btn:hover {
+      background: rgba(30, 34, 50, 0.9);
+      transform: scale(1.12);
+    }
+
+    /* ----------------------------------------------------------
+       NOTIFICATION BANNER (TOP CENTER)
+    ---------------------------------------------------------- */
+    .notification {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(20, 150, 150, 0.9);
+      color: #ffffff;
+      padding: 14px 32px;
+      border-radius: 30px;
+      z-index: 100;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+      font-weight: 500;
+      font-size: 16px;
+      letter-spacing: 0.5px;
+    }
+
+    .notification.show {
+      opacity: 1;
+    }
+
+    /* ----------------------------------------------------------
+       CONNECTION STATUS INDICATOR
+    ---------------------------------------------------------- */
+    .connection-status {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .status-indicator {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #e04b4b;
+      box-shadow: 0 0 15px #e04b4b;
+    }
+
+    .status-indicator.connected {
+      background: #10f0d8;
+      box-shadow: 0 0 15px #10f0d8;
+    }
+
+    /* ----------------------------------------------------------
+       GLASS EFFECT UTILITIES
+    ---------------------------------------------------------- */
+    .glass {
+      background: rgba(20, 24, 36, 0.85);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
+    }
+
+    /* ----------------------------------------------------------
+       COPY BUTTON STYLE
+    ---------------------------------------------------------- */
+    .copy-btn {
+      background: linear-gradient(to right, #0cfbd8, #0a8f91);
+      border: none;
+      color: #ffffff;
+      padding: 14px 32px;
+      border-radius: 30px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      box-shadow: 0 12px 40px rgba(10, 132, 255, 0.4);
+      letter-spacing: 0.5px;
+      font-size: 16px;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    .copy-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 15px 50px rgba(10, 132, 255, 0.6);
+      background: linear-gradient(to right, #10f0d8, #0a4b5c);
+    }
+
+    /* ----------------------------------------------------------
+       CONNECTION INFO STYLE
+    ---------------------------------------------------------- */
+    .connection-info {
+      position: fixed;
+      top: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 0;
+      border-radius: 0;
+      font-size: 14px;
+      z-index: 10;
+      backdrop-filter: none;
+      border: none;
+      text-align: center;
+      max-width: 80%;
+      box-shadow: none;
+      color: #e0e0e0;
+    }
+
+    /* ----------------------------------------------------------
+       ANIMATED PULSE FOR CALL BUTTON
+    ---------------------------------------------------------- */
+    .pulse {
+      animation: pulseAnimation 2s infinite;
+    }
+
+    @keyframes pulseAnimation {
+      0% {
+        box-shadow: 0 0 0 0 rgba(200, 30, 50, 0.7);
+      }
+      70% {
+        box-shadow: 0 0 0 20px rgba(200, 30, 50, 0);
+      }
+      100% {
+        box-shadow: 0 0 0 0 rgba(200, 30, 50, 0);
+      }
+    }
+
+    /* ----------------------------------------------------------
+       LOADING SPINNER
+    ---------------------------------------------------------- */
+    .spinner {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      border: 4px solid rgba(255, 255, 255, 0.1);
+      border-top: 4px solid #0cfbd8;
+      animation: spin 1s linear infinite;
+      z-index: 20;
+    }
+
+    @keyframes spin {
+      0% { transform: translate(-50%, -50%) rotate(0deg); }
+      100% { transform: translate(-50%, -50%) rotate(360deg); }
+    }
+
+    /* ----------------------------------------------------------
+       TYPOGRAPHY
+    ---------------------------------------------------------- */
+    h1, h2, h3, h4, h5, h6 {
+      font-weight: 600;
+      letter-spacing: -0.5px;
+    }
+
+    /* ----------------------------------------------------------
+       RESPONSIVE ADJUSTMENTS
+    ---------------------------------------------------------- */
+    @media (max-width: 768px) {
+      .controls {
+        gap: 18px;
+        padding: 15px 24px;
+      }
+      
+      .control-btn {
+        width: 64px;
+        height: 64px;
+        font-size: 22px;
+      }
+      
+      .status {
+        padding: 10px 20px;
+        font-size: 13px;
+      }
+      
+      .fullscreen-btn {
+        width: 36px;
+        height: 36px;
+        font-size: 18px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="gradient-background"></div>
+  <div class="notification" id="notification">
+    Link copied to clipboard!
+  </div>
+  
+  <div class="spinner" id="spinner"></div>
+
+  <div class="container">
+    <!-- STATUS BAR (top center) -->
+    <div class="status glass" id="status">
+      <div class="connection-status">
+        <div class="status-indicator" id="statusIndicator"></div>
+        <span id="statusText">CONNECTING</span>
+      </div>
+      <div class="timer" id="timer" style="display: none;">
+        <i class="fas fa-clock"></i>
+        <span id="timerDisplay">00:00:00</span>
+      </div>
+    </div>
+
+    <!-- CONNECTION INFO -->
+    <div class="connection-info" id="connectionInfo"></div>
+
+    <!-- FULLSCREEN TOGGLE (top right) -->
+    <div class="fullscreen-btn glass" id="fullscreenBtn">
+      <i class="fas fa-expand"></i>
+    </div>
+    
+    <div class="video-container glass">
+      <!-- Remote video (fills glass container) -->
+      <video id="remoteVideo" autoplay playsinline></video>
+
+      <!-- Local video (corner preview, tap to swap) -->
+      <video id="localVideo" autoplay muted playsinline></video>
+
+      <!-- CONTROLS (bottom center) -->
+      <div class="controls">
+        <div class="control-btn glass" id="switchCameraBtn">
+          <i class="fas fa-camera"></i>
+        </div>
+        <div class="control-btn glass" id="muteBtn">
+          <i class="fas fa-microphone"></i>
+        </div>
+        <div class="control-btn pulse glass" id="endBtn">
+          <i class="fas fa-phone-slash"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PeerJS library -->
+  <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+
+  <script>
+    const MAX_RETRIES = 3;
+    const RETRY_DELAY = 3000;
+
+    let peer;
+    let localStream;
+    let remoteStream = null;
+    let currentCall;
+    let isMuted = false;
+    let currentCamera = 'user';
+    let connectionRetries = 0;
+    let callStartTime = 0;
+    let timerInterval = null;
+    let closeConn = null;
+    let generatedPeerId = null;
+    let isSwapped = false;
+
+    const localVideo = document.getElementById('localVideo');
+    const remoteVideo = document.getElementById('remoteVideo');
+    const statusText = document.getElementById('statusText');
+    const statusIndicator = document.getElementById('statusIndicator');
+    const timerDisplay = document.getElementById('timerDisplay');
+    const timerEl = document.getElementById('timer');
+    const fullscreenBtn = document.getElementById('fullscreenBtn');
+    const connectionInfo = document.getElementById('connectionInfo');
+    const notification = document.getElementById('notification');
+    const spinner = document.getElementById('spinner');
+
+    // Swap videos when local video is tapped
+    localVideo.addEventListener('click', () => {
+      if (!remoteStream) return;
+      isSwapped = !isSwapped;
+      if (isSwapped) {
+        remoteVideo.srcObject = localStream;
+        localVideo.srcObject = remoteStream;
+      } else {
+        remoteVideo.srcObject = remoteStream;
+        localVideo.srcObject = localStream;
+      }
+    });
+
+    function showNotification(message) {
+      notification.textContent = message;
+      notification.classList.add('show');
+      setTimeout(() => {
+        notification.classList.remove('show');
+      }, 2000);
+    }
+
+    function updateStatus(status, isConnected = false) {
+      statusText.textContent = status;
+      if (isConnected) {
+        statusIndicator.classList.add('connected');
+        statusIndicator.style.background = '#10f0d8';
+        statusIndicator.style.boxShadow = '0 0 15px #10f0d8';
+      } else {
+        statusIndicator.classList.remove('connected');
+        statusIndicator.style.background = '#e04b4b';
+        statusIndicator.style.boxShadow = '0 0 15px #e04b4b';
+      }
+    }
+
+    function startTimer() {
+      callStartTime = Date.now();
+      timerEl.style.display = 'flex';
+      timerInterval = setInterval(() => {
+        const elapsed = Date.now() - callStartTime;
+        const hours = Math.floor(elapsed / 3600000);
+        const minutes = Math.floor((elapsed % 3600000) / 60000);
+        const seconds = Math.floor((elapsed % 60000) / 1000);
+        timerDisplay.textContent =
+          `${hours.toString().padStart(2, '0')}:` +
+          `${minutes.toString().padStart(2, '0')}:` +
+          `${seconds.toString().padStart(2, '0')}`;
+      }, 1000);
+    }
+
+    function stopTimer() {
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+      timerEl.style.display = 'none';
+    }
+
+    async function getMedia(cameraFacingMode = 'user') {
+      try {
+        return await navigator.mediaDevices.getUserMedia({
+          video: {
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+            frameRate: { ideal: 60 },
+            facingMode: cameraFacingMode
+          },
+          audio: true
+        });
+      } catch (err) {
+        console.error('Error accessing media devices:', err);
+        connectionInfo.innerHTML =
+          'Failed to access camera and microphone. Please check permissions.';
+        throw err;
+      }
+    }
+
+    async function init() {
+      updateStatus('CONNECTING');
+      spinner.style.display = 'block';
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const code = urlParams.get('code');
+
+      try {
+        localStream = await getMedia();
+        localVideo.srcObject = localStream;
+
+        if (code) {
+          // Receiver
+          generatedPeerId = code;
+          connectionInfo.innerHTML = '';
+          setupReceiver(code);
+        } else {
+          // Caller
+          generatedPeerId = generateId();
+          updateStatus('AWAITING CONNECTION');
+          connectionInfo.innerHTML =
+            `<button class="copy-btn glass" id="copyLinkBtn">
+               <i class="fas fa-copy"></i> Copy Call Link
+             </button>`;
+
+          peer = new Peer(generatedPeerId, {
+            secure: true,
+            host: '0.peerjs.com',
+            port: 443
+          });
+
+          peer.on('open', () => {
+            updateStatus('READY');
+            spinner.style.display = 'none';
+          });
+
+          peer.on('call', call => {
+            call.answer(localStream);
+            currentCall = call;
+            updateStatus('', true);
+            connectionInfo.innerHTML = '';
+            startTimer();
+            triggerVibration();
+            spinner.style.display = 'none';
+
+            call.on('stream', stream => {
+              remoteStream = stream;
+              remoteVideo.srcObject = remoteStream;
+              setupCloseDataConnection(call.peer);
+            });
+
+            call.on('close', () => {
+              updateStatus('DISCONNECTED');
+              stopTimer();
+              setTimeout(() => {
+                window.close();
+              }, 500);
+            });
+
+            call.on('error', (err) => {
+              console.error('Call error:', err);
+              updateStatus('CALL ERROR');
+              connectionInfo.innerHTML =
+                `Error: ${err.message || err.type}`;
+              stopTimer();
+              spinner.style.display = 'none';
+            });
+          });
+        }
+
+        peer.on('error', (err) => {
+          console.error('PeerJS error:', err);
+          updateStatus('PEER ERROR');
+          connectionInfo.innerHTML =
+            `Error: ${err.message || err.type}`;
+          stopTimer();
+          spinner.style.display = 'none';
+
+          if (code && connectionRetries < MAX_RETRIES) {
+            connectionRetries++;
+            connectionInfo.innerHTML +=
+              `<br>Retrying in 3 seconds (${connectionRetries}/${MAX_RETRIES})...`;
+            setTimeout(() => setupReceiver(code), RETRY_DELAY);
+          }
+        });
+
+      } catch (err) {
+        console.error('Initialization error:', err);
+        updateStatus('INIT ERROR');
+        connectionInfo.innerHTML =
+          'Failed to initialize. Please refresh the page.';
+        spinner.style.display = 'none';
+      }
+    }
+
+    function setupReceiver(code) {
+      peer = new Peer({ secure: true, host: '0.peerjs.com', port: 443 });
+
+      peer.on('open', () => {
+        const call = peer.call(code, localStream);
+        currentCall = call;
+        updateStatus('CONNECTING');
+
+        call.on('stream', stream => {
+          updateStatus('', true);
+          connectionInfo.innerHTML = '';
+          remoteStream = stream;
+          remoteVideo.srcObject = remoteStream;
+          startTimer();
+          triggerVibration();
+          spinner.style.display = 'none';
+          setupCloseDataConnection(call.peer);
+        });
+
+        call.on('close', () => {
+          updateStatus('DISCONNECTED');
+          stopTimer();
+          setTimeout(() => {
+            window.close();
+          }, 500);
+        });
+
+        call.on('error', (err) => {
+          console.error('Call error:', err);
+          updateStatus('CALL ERROR');
+          connectionInfo.innerHTML =
+            `Error: ${err.message || err.type}`;
+          stopTimer();
+          spinner.style.display = 'none';
+
+          if (connectionRetries < MAX_RETRIES) {
+            connectionRetries++;
+            connectionInfo.innerHTML +=
+              `<br>Retrying in 3 seconds (${connectionRetries}/${MAX_RETRIES})...`;
+            setTimeout(() => setupReceiver(code), RETRY_DELAY);
+          }
+        });
+      });
+    }
+
+    function generateId() {
+      return Math.random().toString(36).substring(2, 8).toUpperCase();
+    }
+
+    function setupCloseDataConnection(remoteId) {
+      if (closeConn) {
+        closeConn.close();
+        closeConn = null;
+      }
+      closeConn = peer.connect(remoteId);
+
+      closeConn.on('open', () => {});
+
+      closeConn.on('data', data => {
+        if (data === 'close-call') {
+          window.close();
+        }
+      });
+
+      closeConn.on('error', err => {
+        console.error('DataConnection error:', err);
+      });
+    }
+
+    function triggerVibration() {
+      if (navigator.vibrate) {
+        navigator.vibrate(180);
+      }
+    }
+
+    document.addEventListener('click', (e) => {
+      if (e.target.id === 'copyLinkBtn' || e.target.closest('#copyLinkBtn')) {
+        const link = `${window.location.href.split('?')[0]}?code=${generatedPeerId}`;
+        navigator.clipboard.writeText(link).then(() => {
+          showNotification('Call link copied to clipboard!');
+        }).catch(err => {
+          console.error('Copy failed:', err);
+          showNotification('Failed to copy link');
+        });
+      }
+    });
+
+    document.getElementById('muteBtn').onclick = () => {
+      isMuted = !isMuted;
+      const audioTracks = localStream.getAudioTracks();
+      if (audioTracks.length > 0) {
+        audioTracks[0].enabled = !isMuted;
+      }
+      const micIcon = document.querySelector('#muteBtn i');
+      if (isMuted) {
+        micIcon.className = 'fas fa-microphone-slash';
+        document.getElementById('muteBtn').style.background = 'rgba(200, 30, 50, 0.9)';
+      } else {
+        micIcon.className = 'fas fa-microphone';
+        document.getElementById('muteBtn').style.background = 'rgba(20, 24, 36, 0.85)';
+      }
+    };
+
+    document.getElementById('switchCameraBtn').onclick = async () => {
+      try {
+        currentCamera = currentCamera === 'user' ? 'environment' : 'user';
+        const newStream = await getMedia(currentCamera);
+        const videoTrack = newStream.getVideoTracks()[0];
+
+        if (currentCall && currentCall.peerConnection) {
+          const sender = currentCall.peerConnection.getSenders()
+            .find(s => s.track.kind === 'video');
+          if (sender) sender.replaceTrack(videoTrack);
+        }
+
+        const audioTracks = newStream.getAudioTracks();
+        if (audioTracks.length > 0) {
+          audioTracks[0].enabled = !isMuted;
+        }
+
+        localVideo.srcObject = newStream;
+        localStream.getTracks().forEach(track => track.stop());
+        localStream = newStream;
+      } catch (err) {
+        console.error('Error switching camera:', err);
+        connectionInfo.innerHTML =
+          'Error switching camera. Please try again.';
+      }
+    };
+
+    document.getElementById('endBtn').onclick = () => {
+      if (closeConn && closeConn.open) {
+        closeConn.send('close-call');
+      }
+      if (currentCall) {
+        currentCall.close();
+      }
+      if (peer) {
+        peer.destroy();
+      }
+      updateStatus('ENDING CALL');
+      stopTimer();
+      setTimeout(() => {
+        window.close();
+      }, 200);
+    };
+
+    fullscreenBtn.addEventListener('click', () => {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen();
+        fullscreenBtn.innerHTML = '<i class="fas fa-compress"></i>';
+      } else {
+        document.exitFullscreen();
+        fullscreenBtn.innerHTML = '<i class="fas fa-expand"></i>';
+      }
+    });
+
+    init();
+  </script>
+</body>
+</html>

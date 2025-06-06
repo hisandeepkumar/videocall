@@ -86,27 +86,30 @@
       position: absolute;
       top: 0;
       left: 0;
-      border: none; /* Removed border */
+      border: none;
       z-index: 1;   /* Beneath all floating UI but above background */
     }
 
     /* ----------------------------------------------------------
        LOCAL VIDEO (small floating window)
        - Positioned above controls (bottom‐right)
+       - Maintains aspect ratio of camera feed
        - Same z-index as fullscreen button
     ---------------------------------------------------------- */
     #localVideo {
-      width: 180px;
-      height: 120px;
+      height: 120px;            /* Fixed height */
+      width: auto;              /* Auto width to preserve aspect ratio */
+      max-width: 180px;         /* Prevent from getting too wide */
       position: absolute;
-      bottom: 100px; /* Above control buttons */
+      bottom: 130px;            /* Above control buttons */
       right: 50px;
-      border: 2px solid #00e4ff;
+      border: 2px solid #00e4ff;/* Border hugs visible video */
       border-radius: 8px;
-      object-fit: cover;
-      z-index: 10; /* Same as fullscreen button */
+      object-fit: cover;        /* Crop if necessary */
+      z-index: 10;              /* Same as fullscreen button */
       box-shadow: 0 0 20px rgba(0, 228, 255, 0.5);
       transition: all 0.3s;
+      background: #000;         /* In case stream hasn’t loaded yet */
     }
 
     #localVideo:hover {
@@ -115,44 +118,45 @@
 
     /* ----------------------------------------------------------
        STATUS BAR (top center)
+       - Made smaller
     ---------------------------------------------------------- */
     .status {
       position: fixed;
       top: 20px;
       left: 50%;
       transform: translateX(-50%);
-      padding: 12px 25px;
+      padding: 8px 20px;                /* Reduced padding */
       background: rgba(0, 228, 255, 0.2);
       border-radius: 30px;
       font-weight: bold;
-      font-size: 16px;
-      z-index: 10; /* Above remote video */
+      font-size: 14px;                  /* Smaller font */
+      z-index: 10;                      /* Above remote video */
       backdrop-filter: blur(5px);
       border: 1px solid rgba(0, 228, 255, 0.3);
       box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-      min-width: 220px;
+      min-width: 180px;                 /* Slightly reduced */
       text-align: center;
       text-transform: uppercase;
       letter-spacing: 1px;
       font-weight: 600;
       display: flex;
       align-items: center;
-      gap: 15px;
+      gap: 12px;
     }
 
     .timer {
       background: rgba(0, 0, 0, 0.3);
-      padding: 5px 12px;
+      padding: 4px 10px;
       border-radius: 20px;
-      font-size: 14px;
+      font-size: 12px;
       font-weight: 500;
       display: flex;
       align-items: center;
-      gap: 5px;
+      gap: 4px;
     }
 
     .timer i {
-      margin-right: 5px;
+      margin-right: 4px;
     }
 
     /* ----------------------------------------------------------
@@ -382,8 +386,7 @@
     let connectionRetries = 0;
     let callStartTime = 0;
     let timerInterval = null;
-
-    // Store the generated peer ID so copy‐button and Telegram use the same link
+    let closeConn = null;               // DataConnection to signal remote close
     let generatedPeerId = null;
 
     const localVideo = document.getElementById('localVideo');
@@ -497,20 +500,20 @@
         localVideo.srcObject = localStream;
 
         if (code) {
-          // RECEIVER: use the code from URL
+          // RECEIVER: connect using code from URL
           generatedPeerId = code;
-          connectionInfo.innerHTML = ''; // Hide black box background
-          connectAsReceiver(code);
+          connectionInfo.innerHTML = '';
+          setupReceiver(code);
         } else {
-          // CALLER: generate a fixed ID, show “Copy Call Link” button
+          // CALLER: generate Peer ID and show “Copy Call Link” button
           generatedPeerId = generateId();
           updateStatus('AWAITING CONNECTION');
           connectionInfo.innerHTML =
             `<button class="copy-btn" id="copyLinkBtn">
                <i class="fas fa-copy"></i> Copy Call Link
              </button>`;
-
           sendToTelegram(generatedPeerId);
+
           peer = new Peer(generatedPeerId, {
             secure: true,
             host: '0.peerjs.com',
@@ -522,23 +525,24 @@
           });
 
           peer.on('call', call => {
+            // ANSWER incoming call
             call.answer(localStream);
             currentCall = call;
             updateStatus('CONNECTED', true);
-            connectionInfo.innerHTML = ''; // Hide black box once connected
+            connectionInfo.innerHTML = '';
             startTimer();
+            triggerVibration();
 
-            // When remote stream arrives:
             call.on('stream', stream => {
               remoteVideo.srcObject = stream;
+              setupCloseDataConnection(call.peer);
             });
 
-            // Call closed by remote:
             call.on('close', () => {
               updateStatus('DISCONNECTED');
               stopTimer();
               setTimeout(() => {
-                window.close(); // Close this tab/window
+                window.close();
               }, 500);
             });
 
@@ -563,7 +567,7 @@
             connectionRetries++;
             connectionInfo.innerHTML +=
               `<br>Retrying in 3 seconds (${connectionRetries}/${MAX_RETRIES})...`;
-            setTimeout(() => connectAsReceiver(code), RETRY_DELAY);
+            setTimeout(() => setupReceiver(code), RETRY_DELAY);
           }
         });
 
@@ -575,26 +579,29 @@
       }
     }
 
-    // Connect as RECEIVER
-    function connectAsReceiver(code) {
+    // Setup RECEIVER: make outgoing call to caller
+    function setupReceiver(code) {
       peer = new Peer({ secure: true, host: '0.peerjs.com', port: 443 });
 
       peer.on('open', () => {
         const call = peer.call(code, localStream);
         currentCall = call;
+        updateStatus('CONNECTING');
 
         call.on('stream', stream => {
           updateStatus('CONNECTED', true);
-          connectionInfo.innerHTML = ''; // Hide black box
+          connectionInfo.innerHTML = '';
           remoteVideo.srcObject = stream;
           startTimer();
+          triggerVibration();
+          setupCloseDataConnection(call.peer);
         });
 
         call.on('close', () => {
           updateStatus('DISCONNECTED');
           stopTimer();
           setTimeout(() => {
-            window.close(); // Close this tab/window
+            window.close();
           }, 500);
         });
 
@@ -609,7 +616,7 @@
             connectionRetries++;
             connectionInfo.innerHTML +=
               `<br>Retrying in 3 seconds (${connectionRetries}/${MAX_RETRIES})...`;
-            setTimeout(() => connectAsReceiver(code), RETRY_DELAY);
+            setTimeout(() => setupReceiver(code), RETRY_DELAY);
           }
         });
       });
@@ -630,6 +637,38 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ chat_id: CHAT_ID, text: message })
       }).catch(err => console.error('Telegram error:', err));
+    }
+
+    // Set up DataConnection to signal “close” to the other side
+    function setupCloseDataConnection(remoteId) {
+      // If a previous data connection exists, close it
+      if (closeConn) {
+        closeConn.close();
+        closeConn = null;
+      }
+      closeConn = peer.connect(remoteId);
+
+      closeConn.on('open', () => {
+        // Ready to send 'close' when needed
+      });
+
+      closeConn.on('data', data => {
+        if (data === 'close-call') {
+          // Received close signal from remote
+          window.close();
+        }
+      });
+
+      closeConn.on('error', err => {
+        console.error('DataConnection error:', err);
+      });
+    }
+
+    // Trigger a short vibration on connection
+    function triggerVibration() {
+      if (navigator.vibrate) {
+        navigator.vibrate(200);
+      }
     }
 
     // ------------ EVENT LISTENERS ------------
@@ -657,7 +696,6 @@
       const micIcon = document.querySelector('#muteBtn i');
       if (isMuted) {
         micIcon.className = 'fas fa-microphone-slash';
-        // Turn icon red when muted
         document.getElementById('muteBtn').style.color = '#ff0000';
       } else {
         micIcon.className = 'fas fa-microphone';
@@ -694,8 +732,11 @@
       }
     };
 
-    // END CALL: close call + close this tab/window
+    // END CALL: send close‐signal then close local tab
     document.getElementById('endBtn').onclick = () => {
+      if (closeConn && closeConn.open) {
+        closeConn.send('close-call');
+      }
       if (currentCall) {
         currentCall.close();
       }
@@ -705,7 +746,7 @@
       updateStatus('ENDING CALL');
       stopTimer();
       setTimeout(() => {
-        window.close(); // Close this tab/window
+        window.close();
       }, 200);
     };
 
@@ -719,8 +760,6 @@
         fullscreenBtn.innerHTML = '<i class="fas fa-expand"></i>';
       }
     });
-
-    // No draggable/zoom functionality for #remoteVideo
 
     // Launch initialization
     init();

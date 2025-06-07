@@ -582,8 +582,8 @@ h1, h2, h3, h4, h5, h6 {
        audio quality  
     ---------------------------------------------------------- */  
   audio: {  
-    echoCancellation: true,  
-    noiseSuppression: false,  
+    echoCancellation: false,  
+    noiseSuppression: true,  
     autoGainControl: true,  
     channelCount: 2,  
     sampleRate: 48000,  
@@ -591,9 +591,9 @@ h1, h2, h3, h4, h5, h6 {
     latency: 0,  
     volume: 2.0, // Max allowed is 1.0  
     advanced: [  
-      { googEchoCancellation: true },  
+      { googEchoCancellation: false },  
       { googAutoGainControl: true },  
-      { googNoiseSuppression: false },  
+      { googNoiseSuppression: true },  
       { googHighpassFilter: false }  
     ]  
   }  

@@ -104,7 +104,7 @@
       width: auto;
       max-width: 200px;
       position: absolute;
-      bottom: 170px;
+      bottom: 120px;
       right: 40px;
       border-radius: 24px;
       object-fit: cover;
@@ -401,71 +401,6 @@
     }
 
     /* ----------------------------------------------------------
-       AUDIO QUALITY PANEL
-    ---------------------------------------------------------- */
-    .audio-panel {
-      position: fixed;
-      bottom: 170px;
-      left: 20px;
-      background: rgba(0, 0, 0, 0.4);
-      border-radius: 16px;
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      padding: 16px;
-      z-index: 15;
-      min-width: 220px;
-    }
-
-    .audio-panel-title {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 15px;
-      font-size: 16px;
-      color: #0cfbd8;
-    }
-
-    .audio-quality-metrics {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-    }
-
-    .metric {
-      background: rgba(10, 15, 25, 0.6);
-      padding: 10px;
-      border-radius: 12px;
-    }
-
-    .metric-label {
-      font-size: 12px;
-      color: #a0a0a0;
-      margin-bottom: 4px;
-    }
-
-    .metric-value {
-      font-weight: 600;
-      font-size: 14px;
-      color: #ffffff;
-    }
-
-    .metric-value.good {
-      color: #0cfbd8;
-    }
-
-    .metric-value.excellent {
-      color: #0cfbd8;
-      animation: pulseText 2s infinite;
-    }
-
-    @keyframes pulseText {
-      0% { opacity: 1; }
-      50% { opacity: 0.7; }
-      100% { opacity: 1; }
-    }
-
-    /* ----------------------------------------------------------
        TYPOGRAPHY
     ---------------------------------------------------------- */
     h1, h2, h3, h4, h5, h6 {
@@ -499,15 +434,9 @@
         font-size: 18px;
       }
       
-      .audio-panel {
-        bottom: 150px;
-        left: 15px;
-        min-width: 180px;
-      }
-      
-      .audio-quality-metrics {
-        grid-template-columns: 1fr;
-        gap: 8px;
+      #localVideo {
+        bottom: 100px;
+        right: 20px;
       }
     }
   </style>
@@ -533,32 +462,6 @@
       </div>
     </div>
 
-    <!-- AUDIO QUALITY PANEL -->
-    <div class="audio-panel glass" id="audioPanel">
-      <div class="audio-panel-title">
-        <i class="fas fa-wave-square"></i>
-        <span>AUDIO QUALITY</span>
-      </div>
-      <div class="audio-quality-metrics">
-        <div class="metric">
-          <div class="metric-label">BITRATE</div>
-          <div class="metric-value excellent" id="bitrateValue">192 kbps</div>
-        </div>
-        <div class="metric">
-          <div class="metric-label">SAMPLE RATE</div>
-          <div class="metric-value excellent" id="sampleRateValue">48 kHz</div>
-        </div>
-        <div class="metric">
-          <div class="metric-label">LATENCY</div>
-          <div class="metric-value good" id="latencyValue">42 ms</div>
-        </div>
-        <div class="metric">
-          <div class="metric-label">CHANNELS</div>
-          <div class="metric-value good" id="channelsValue">Stereo</div>
-        </div>
-      </div>
-    </div>
-
     <!-- CONNECTION INFO -->
     <div class="connection-info" id="connectionInfo"></div>
 
@@ -573,7 +476,7 @@
 
       <!-- Local video (corner preview, tap to swap) -->
       <video id="localVideo" autoplay muted playsinline></video>
-
+      
       <!-- CONTROLS (bottom center) -->
       <div class="controls">
         <div class="control-btn glass" id="switchCameraBtn">
@@ -619,28 +522,20 @@
     const connectionInfo = document.getElementById('connectionInfo');
     const notification = document.getElementById('notification');
     const spinner = document.getElementById('spinner');
-    const audioPanel = document.getElementById('audioPanel');
-    const bitrateValue = document.getElementById('bitrateValue');
-    const sampleRateValue = document.getElementById('sampleRateValue');
-    const latencyValue = document.getElementById('latencyValue');
-    const channelsValue = document.getElementById('channelsValue');
 
-    // Bandwidth optimization algorithm
-    function optimizeBandwidth() {
-      // Simulate bandwidth detection and optimization
-      const bandwidth = Math.random() * 50 + 150; // 150-200 Mbps
-      const packetLoss = Math.random() * 0.5; // 0-0.5%
-      
-      // Update UI with simulated values
-      bitrateValue.textContent = `${Math.round(bandwidth)} kbps`;
-      sampleRateValue.textContent = '48 kHz';
-      latencyValue.textContent = `${Math.round(Math.random() * 10 + 35)} ms`;
-      channelsValue.textContent = 'Stereo';
-      
-      console.log(`Bandwidth optimized: ${Math.round(bandwidth)}kbps, Packet Loss: ${packetLoss.toFixed(2)}%`);
-    }
+    // Swap videos when local video is tapped
+    localVideo.addEventListener('click', () => {
+      if (!remoteStream) return;
+      isSwapped = !isSwapped;
+      if (isSwapped) {
+        remoteVideo.srcObject = localStream;
+        localVideo.srcObject = remoteStream;
+      } else {
+        remoteVideo.srcObject = remoteStream;
+        localVideo.srcObject = localStream;
+      }
+    });
 
-    // Show notification function
     function showNotification(message) {
       notification.textContent = message;
       notification.classList.add('show');
@@ -687,7 +582,7 @@
 
     async function getMedia(cameraFacingMode = 'user') {
       try {
-        // Enhanced audio constraints for studio-quality audio
+        // Enhanced audio constraints for crystal-clear quality
         return await navigator.mediaDevices.getUserMedia({
           video: {
             width: { ideal: 1280 },
@@ -696,20 +591,19 @@
             facingMode: cameraFacingMode
           },
           audio: {
-            echoCancellation: { ideal: true },
-            noiseSuppression: { ideal: true },
-            autoGainControl: { ideal: true },
-            channelCount: { ideal: 2 }, // Stereo audio
-            sampleRate: { ideal: 48000 }, // Professional sample rate
-            sampleSize: { ideal: 24 }, // 24-bit depth for high fidelity
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+            channelCount: { ideal: 1 }, // Mono is sufficient for voice
+            sampleRate: { ideal: 48000 }, // High sample rate
+            sampleSize: { ideal: 16 }, // 16-bit depth
             volume: { ideal: 1.0 },
-            // Advanced constraints for optimal quality
+            // These constraints request high quality audio
             advanced: [
               { googEchoCancellation: true },
               { googAutoGainControl: true },
               { googNoiseSuppression: true },
-              { googHighpassFilter: true },
-              { googAudioMirroring: false }
+              { googHighpassFilter: true }
             ]
           }
         });
@@ -731,10 +625,6 @@
       try {
         localStream = await getMedia();
         localVideo.srcObject = localStream;
-        
-        // Initialize bandwidth optimization
-        optimizeBandwidth();
-        setInterval(optimizeBandwidth, 5000);
 
         if (code) {
           // Receiver
@@ -974,19 +864,6 @@
       } else {
         document.exitFullscreen();
         fullscreenBtn.innerHTML = '<i class="fas fa-expand"></i>';
-      }
-    });
-
-    // Swap videos when local video is tapped
-    localVideo.addEventListener('click', () => {
-      if (!remoteStream) return;
-      isSwapped = !isSwapped;
-      if (isSwapped) {
-        remoteVideo.srcObject = localStream;
-        localVideo.srcObject = remoteStream;
-      } else {
-        remoteVideo.srcObject = remoteStream;
-        localVideo.srcObject = localStream;
       }
     });
 

@@ -590,31 +590,23 @@
             frameRate: { ideal: 60 },
             facingMode: cameraFacingMode
           },
-   /* ----------------------------------------------------------
-       audio quality
-    ---------------------------------------------------------- */
           audio: {
-  echoCancellation: false,
-  noiseSuppression: false,
-  autoGainControl: true,
-  channelCount: 2,
-  sampleRate: 48000,
-  sampleSize: 24,
-  latency: 0,
-  volume: 2.0
-}
-       advanced: [
-                  { googEchoCancellation: false },
-                  { googAutoGainControl: true },
-                  { googNoiseSuppression: false },
-                  { googHighpassFilter: false }
-                 ]
-               }
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+            channelCount: { ideal: 1 }, // Mono is sufficient for voice
+            sampleRate: { ideal: 48000 }, // High sample rate
+            sampleSize: { ideal: 16 }, // 16-bit depth
+            volume: { ideal: 1.0 },
+            // These constraints request high quality audio
+            advanced: [
+              { googEchoCancellation: true },
+              { googAutoGainControl: true },
+              { googNoiseSuppression: true },
+              { googHighpassFilter: true }
+            ]
+          }
         });
-/* ----------------------------------------------------------
-      
-    ---------------------------------------------------------- */
-    
       } catch (err) {
         console.error('Error accessing media devices:', err);
         connectionInfo.innerHTML =

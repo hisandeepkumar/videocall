@@ -401,6 +401,82 @@
     }
 
     /* ----------------------------------------------------------
+       AUDIO AMPLIFIER CONTROLS (HIDDEN)
+    ---------------------------------------------------------- */
+    .audio-controls {
+      position: fixed;
+      bottom: 120px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 15px 25px;
+      background: rgba(15, 18, 28, 0.8);
+      border-radius: 30px;
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 15px;
+      max-width: 90%;
+    }
+
+    .amplifier-info {
+      color: #10f0d8;
+      font-size: 16px;
+      font-weight: 600;
+      text-align: center;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 8px 16px;
+      border-radius: 20px;
+      background: rgba(0, 0, 0, 0.3);
+    }
+
+    .amplifier-control {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      width: 100%;
+    }
+
+    .amplifier-label {
+      min-width: 100px;
+      text-align: center;
+      font-size: 14px;
+      color: #b0e0e6;
+    }
+
+    .amplifier-slider {
+      flex: 1;
+      -webkit-appearance: none;
+      height: 8px;
+      border-radius: 4px;
+      background: linear-gradient(to right, #0a4b5c, #0cfbd8);
+      outline: none;
+    }
+
+    .amplifier-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #10f0d8;
+      cursor: pointer;
+      box-shadow: 0 0 10px rgba(16, 240, 216, 0.8);
+    }
+
+    .amplifier-value {
+      min-width: 40px;
+      text-align: center;
+      font-weight: bold;
+      color: #10f0d8;
+      font-size: 16px;
+    }
+
+    /* ----------------------------------------------------------
        TYPOGRAPHY
     ---------------------------------------------------------- */
     h1, h2, h3, h4, h5, h6 {
@@ -438,6 +514,11 @@
         bottom: 100px;
         right: 20px;
       }
+      
+      .audio-controls {
+        bottom: 150px;
+        padding: 12px 20px;
+      }
     }
   </style>
 </head>
@@ -459,6 +540,18 @@
       <div class="timer" id="timer" style="display: none;">
         <i class="fas fa-clock"></i>
         <span id="timerDisplay">00:00:00</span>
+      </div>
+    </div>
+
+    <!-- AUDIO AMPLIFIER CONTROLS -->
+    <div class="audio-controls glass" id="audioControls">
+      <div class="amplifier-info">
+        <i class="fas fa-volume-up"></i> REMOTE AUDIO AMPLIFIER
+      </div>
+      <div class="amplifier-control">
+        <span class="amplifier-label">Amplification:</span>
+        <input type="range" min="1" max="5" step="0.1" value="2.0" class="amplifier-slider" id="amplifierSlider">
+        <span class="amplifier-value" id="amplifierValue">2.0x</span>
       </div>
     </div>
 
@@ -498,6 +591,7 @@
   <script>
     const MAX_RETRIES = 3;
     const RETRY_DELAY = 3000;
+    const DEFAULT_AMPLIFICATION = 2.0; // Default amplification level
 
     let peer;
     let localStream;
@@ -511,6 +605,10 @@
     let closeConn = null;
     let generatedPeerId = null;
     let isSwapped = false;
+    let audioContext = null;
+    let gainNode = null;
+    let remoteAudioSource = null;
+    let amplificationValue = DEFAULT_AMPLIFICATION;
 
     const localVideo = document.getElementById('localVideo');
     const remoteVideo = document.getElementById('remoteVideo');
@@ -522,6 +620,13 @@
     const connectionInfo = document.getElementById('connectionInfo');
     const notification = document.getElementById('notification');
     const spinner = document.getElementById('spinner');
+    const amplifierSlider = document.getElementById('amplifierSlider');
+    const amplifierValue = document.getElementById('amplifierValue');
+    const audioControls = document.getElementById('audioControls');
+
+    // Set initial amplification value
+    amplifierSlider.value = amplificationValue;
+    amplifierValue.textContent = `${amplificationValue.toFixed(1)}x`;
 
     // Swap videos when local video is tapped
     localVideo.addEventListener('click', () => {
@@ -534,6 +639,13 @@
         remoteVideo.srcObject = remoteStream;
         localVideo.srcObject = localStream;
       }
+    });
+
+    // Amplifier slider change handler
+    amplifierSlider.addEventListener('input', () => {
+      amplificationValue = parseFloat(amplifierSlider.value);
+      amplifierValue.textContent = `${amplificationValue.toFixed(1)}x`;
+      applyAudioAmplification();
     });
 
     function showNotification(message) {
@@ -580,6 +692,53 @@
       timerEl.style.display = 'none';
     }
 
+    function setupAudioContext() {
+      if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        gainNode = audioContext.createGain();
+        gainNode.connect(audioContext.destination);
+      }
+    }
+
+    function applyAudioAmplification() {
+      if (gainNode) {
+        gainNode.gain.value = amplificationValue;
+        console.log(`Audio amplified to ${amplificationValue.toFixed(1)}x`);
+      }
+    }
+
+    function processRemoteStream(stream) {
+      try {
+        setupAudioContext();
+        
+        // Disconnect any existing source
+        if (remoteAudioSource) {
+          remoteAudioSource.disconnect();
+        }
+        
+        // Create a new source from the remote stream
+        remoteAudioSource = audioContext.createMediaStreamSource(stream);
+        remoteAudioSource.connect(gainNode);
+        
+        // Apply the amplification
+        applyAudioAmplification();
+        
+        // Create a new stream with the amplified audio
+        const destination = audioContext.createMediaStreamDestination();
+        gainNode.connect(destination);
+        
+        // Combine video and amplified audio
+        const newStream = new MediaStream();
+        stream.getVideoTracks().forEach(track => newStream.addTrack(track));
+        destination.stream.getAudioTracks().forEach(track => newStream.addTrack(track));
+        
+        return newStream;
+      } catch (error) {
+        console.error('Error processing audio:', error);
+        return stream;
+      }
+    }
+
     async function getMedia(cameraFacingMode = 'user') {
       try {
         // Enhanced audio constraints for crystal-clear quality
@@ -590,26 +749,23 @@
             frameRate: { ideal: 60 },
             facingMode: cameraFacingMode
           },
-    /* ----------------------------------------------------------
-       audio quality
-    ---------------------------------------------------------- */
-  audio: {
-    echoCancellation: true,
-    noiseSuppression: false,
-    autoGainControl: true,
-    channelCount: 2,
-    sampleRate: 48000,
-    sampleSize: 24,
-    latency: 0,
-    volume: 1.0, // Max allowed is 1.0
-    advanced: [
-      { googEchoCancellation: true },
-      { googAutoGainControl: true },
-      { googNoiseSuppression: false },
-      { googHighpassFilter: false }
-    ]
-  }
-});
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: false,
+            autoGainControl: true,
+            channelCount: 2,
+            sampleRate: 48000,
+            sampleSize: 24,
+            latency: 0,
+            volume: 1.0, // Max allowed is 1.0
+            advanced: [
+              { googEchoCancellation: true },
+              { googAutoGainControl: true },
+              { googNoiseSuppression: false },
+              { googHighpassFilter: false }
+            ]
+          }
+        });
       } catch (err) {
         console.error('Error accessing media devices:', err);
         connectionInfo.innerHTML =
@@ -664,7 +820,9 @@
             spinner.style.display = 'none';
 
             call.on('stream', stream => {
-              remoteStream = stream;
+              // Process the stream for audio amplification
+              const amplifiedStream = processRemoteStream(stream);
+              remoteStream = amplifiedStream;
               remoteVideo.srcObject = remoteStream;
               setupCloseDataConnection(call.peer);
             });
@@ -724,7 +882,9 @@
         call.on('stream', stream => {
           updateStatus('', true);
           connectionInfo.innerHTML = '';
-          remoteStream = stream;
+          // Process the stream for audio amplification
+          const amplifiedStream = processRemoteStream(stream);
+          remoteStream = amplifiedStream;
           remoteVideo.srcObject = remoteStream;
           startTimer();
           triggerVibration();

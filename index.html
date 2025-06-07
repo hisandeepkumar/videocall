@@ -593,8 +593,8 @@
          
           audio: {
                   echoCancellation: { ideal: true },
-                  noiseSuppression: { ideal: false }, // OFF if user has good mic + quiet room
-                  autoGainControl: { ideal: false }, // OFF for raw/studio-like audio
+                  noiseSuppression: { false }, // OFF if user has good mic + quiet room
+                  autoGainControl: { true }, // OFF for raw/studio-like audio
                   channelCount: { ideal: 2, min: 1, max: 2 }, // stereo if needed
                   sampleRate: { ideal: 48000, min: 44100 }, // standard professional sample rate
                   sampleSize: { ideal: 24 }, // 24-bit if supported
@@ -602,7 +602,7 @@
                   volume: 2.0,
        advanced: [
                   { googEchoCancellation: false },
-                  { googAutoGainControl: false },
+                  { googAutoGainControl: true },
                   { googNoiseSuppression: false },
                   { googHighpassFilter: false }
                  ]

@@ -1,11 +1,13 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Video Call Application</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-  <style>
+<!DOCTYPE html>  <html lang="en">  
+<head>  
+  <meta charset="UTF-8" />  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />  
+  <title>Quantum Video Call - Premium Audio</title>  
+  <link  
+    rel="stylesheet"  
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"  
+  />  
+  <style>  
     /* ----------------------------------------------------------  
        RESET & BODY  
     ---------------------------------------------------------- */  
@@ -22,7 +24,14 @@
   position: relative;  
 }  
 
-    /* Container aur Video Container */
+/* ----------------------------------------------------------  
+   ANIMATED GRADIENT BACKGROUND (PURPLE ➔ TEAL)   
+---------------------------------------------------------- */  
+
+/* ----------------------------------------------------------  
+   MODERN GLASS-STYLE UI ELEMENTS   
+---------------------------------------------------------- */  
+  /* Container aur Video Container */
     .container {
       display: flex;
       flex-direction: column;
@@ -57,7 +66,7 @@
       left: -1px;
       right: -1px;
       bottom: -1px;
-      border-radius: 48px;
+      border-radius: 41px;
       background: linear-gradient(130deg, #ff0057, #ff7a00, #00ffe1, #ff00f2, #ff0057);
       background-size: 400%;
       animation: borderGlow 6s linear infinite;
@@ -98,285 +107,394 @@
       background: #000;
     }
 
-    /* Video Elements */
-    #remoteVideo {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      background: #000;
-    }
-    #localVideo {
-      height: 160px;
-      width: auto;
-      max-width: 200px;
-      position: absolute;
-      bottom: 120px;
-      right: 40px;
-      border-radius: 24px;
-      object-fit: cover;
-      z-index: 10;
-      background: #000;
-      transition: all 0.3s;
-      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
-      cursor: pointer;
-    }
-    #localVideo:hover {
-      transform: scale(1.07);
-    }
 
-    /* Status Bar */
-    .status {
-      position: fixed;
-      top: 30px;
-      left: 50%;
-      transform: translateX(-50%);
-      padding: 7px 16px;
-      background: rgba(15, 18, 28, 0.75);
-      border-radius: 30px;
-      font-weight: 600;
-      font-size: 15px;
-      z-index: 10;
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
-      min-width: 220px;
-      text-align: center;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      color: #e0e0e0;
-      display: flex;
-      align-items: center;
-      gap: 14px;
-    }
-    .timer {
-      background: rgba(5, 8, 15, 0.6);
-      padding: 6px 16px;
-      border-radius: 22px;
-      font-size: 13px;
-      font-weight: 500;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      color: #b0e0e6;
-    }
-    .timer i {
-      margin-right: 6px;
-      color: #10f0d8;
-    }
+/* ----------------------------------------------------------  
+   VIDEO ELEMENTS (FULLSCREEN & LOCAL PREVIEW)  
+---------------------------------------------------------- */  
+#remoteVideo {  
+  border: 3px solid rgba(255, 255, 255, 0.8);  
+  position: absolute;  
+  top: 0;  
+  left: 0;  
+  width: 100%;  
+  height: 100%;  
+  object-fit: cover;  
+  background: #000;  
+  border-radius: 24px;  
+  z-index: 1;  
+  cursor: default;  
+  box-shadow:  
+    0 0 12px 4px rgba(255, 255, 255, 0.6),  
+    0 12px 40px rgba(0, 0, 0, 0.6);  
+}  
 
-    /* Controls */
-    .controls {
-      position: fixed;
-      bottom: 22px;
-      left: 50%;
-      transform: translateX(-50%);
-      display: flex;
-      gap: 28px;
-      z-index: 10;
-      background: rgba(15, 18, 28, 0.8);
-      padding: 10px 25px;
-      border-radius: 54px;
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
-    }
-    .control-btn {
-      width: 70px;
-      height: 70px;
-      border-radius: 50%;
-      background: rgba(20, 24, 36, 0.85);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      color: #e0e0e0;
-      font-size: 26px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
-    }
-    .control-btn:hover {
-      background: rgba(30, 34, 50, 0.9);
-      transform: translateY(-6px);
-      box-shadow: 0 16px 50px rgba(0, 0, 0, 0.5);
-    }
-    #endBtn {
-      background: rgba(200, 30, 50, 0.9);
-    }
-    #endBtn:hover {
-      background: rgba(220, 50, 70, 0.9);
-    }
+#localVideo {  
+  height: 160px;  
+  width: auto;  
+  max-width: 200px;  
+  position: absolute;  
+  bottom: 120px;  
+  right: 40px;  
+  border-radius: 24px;  
+  object-fit: cover;  
+  z-index: 10;  
+  background: #000;  
+  transition: all 0.3s;  
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);  
+  cursor: pointer;  
+}  
 
-    /* Fullscreen Button */
-    .fullscreen-btn {
-      position: fixed;
-      top: 32px;
-      right: 32px;
-      width: 42px;
-      height: 42px;
-      border-radius: 50%;
-      background: rgba(20, 24, 36, 0.85);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      color: #e0e0e0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 22px;
-      cursor: pointer;
-      z-index: 10;
-      transition: all 0.3s;
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
-    }
-    .fullscreen-btn:hover {
-      background: rgba(30, 34, 50, 0.9);
-      transform: scale(1.12);
-    }
+#localVideo:hover {  
+  transform: scale(1.07);  
+}  
 
-    /* Notification */
-    .notification {
-      position: fixed;
-      top: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(20, 150, 150, 0.9);
-      color: #ffffff;
-      padding: 14px 32px;
-      border-radius: 30px;
-      z-index: 100;
-      opacity: 0;
-      transition: opacity 0.3s ease;
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
-      font-weight: 500;
-      font-size: 16px;
-      letter-spacing: 0.5px;
-    }
-    .notification.show {
-      opacity: 1;
-    }
+/* ----------------------------------------------------------  
+   STATUS BAR (TOP CENTER)  
+---------------------------------------------------------- */  
+.status {  
+  position: fixed;  
+  top: 30px;  
+  left: 50%;  
+  transform: translateX(-50%);  
+  padding: 7px 16px;  
+  background: rgba(15, 18, 28, 0.75);  
+  border-radius: 30px;  
+  font-weight: 600;  
+  font-size: 15px;  
+  z-index: 10;  
+  backdrop-filter: blur(12px);  
+  -webkit-backdrop-filter: blur(12px);  
+  border: 1px solid rgba(255, 255, 255, 0.08);  
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);  
+  min-width: 220px;  
+  text-align: center;  
+  text-transform: uppercase;  
+  letter-spacing: 1px;  
+  color: #e0e0e0;  
+  display: flex;  
+  align-items: center;  
+  gap: 14px;  
+}  
 
-    /* Connection Status */
-    .connection-status {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    .status-indicator {
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      background: #e04b4b;
-      box-shadow: 0 0 15px #e04b4b;
-    }
-    .status-indicator.connected {
-      background: #10f0d8;
-      box-shadow: 0 0 15px #10f0d8;
-    }
+.timer {  
+  background: rgba(5, 8, 15, 0.6);  
+  padding: 6px 16px;  
+  border-radius: 22px;  
+  font-size: 13px;  
+  font-weight: 500;  
+  display: flex;  
+  align-items: center;  
+  gap: 8px;  
+  color: #b0e0e6;  
+}  
 
-    /* Glass Effect */
-    .glass {
-      background: rgba(20, 24, 36, 0.85);
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
-    }
+.timer i {  
+  margin-right: 6px;  
+  color: #10f0d8;  
+}  
 
-    /* Copy Button */
-    .copy-btn {
-      background: linear-gradient(to right, #0cfbd8, #0a8f91);
-      border: none;
-      color: #ffffff;
-      padding: 14px 32px;
-      border-radius: 30px;
-      cursor: pointer;
-      font-weight: 600;
-      transition: all 0.3s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
-      box-shadow: 0 12px 40px rgba(10, 132, 255, 0.4);
-      letter-spacing: 0.5px;
-      font-size: 16px;
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-    }
-    .copy-btn:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 15px 50px rgba(10, 132, 255, 0.6);
-      background: linear-gradient(to right, #10f0d8, #0a4b5c);
-    }
+/* ----------------------------------------------------------  
+   CONTROLS (BOTTOM CENTER)  
+---------------------------------------------------------- */  
+.controls {  
+  position: fixed;  
+  bottom: 22px;  
+  left: 50%;  
+  transform: translateX(-50%);  
+  display: flex;  
+  gap: 28px;  
+  z-index: 10;  
+  background: rgba(15, 18, 28, 0.8);  
+  padding: 10px 25px;  
+  border-radius: 54px;  
+  backdrop-filter: blur(14px);  
+  -webkit-backdrop-filter: blur(14px);  
+  border: 1px solid rgba(255, 255, 255, 0.08);  
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4);  
+}  
 
-    /* Connection Info */
-    .connection-info {
-      position: fixed;
-      top: 80px;
-      left: 50%;
-      transform: translateX(-50%);
-      padding: 0;
-      border-radius: 0;
-      font-size: 14px;
-      z-index: 10;
-      backdrop-filter: none;
-      border: none;
-      text-align: center;
-      max-width: 80%;
-      box-shadow: none;
-      color: #e0e0e0;
-    }
+.control-btn {  
+  width: 70px;  
+  height: 70px;  
+  border-radius: 50%;  
+  background: rgba(20, 24, 36, 0.85);  
+  backdrop-filter: blur(10px);  
+  -webkit-backdrop-filter: blur(10px);  
+  border: 1px solid rgba(255, 255, 255, 0.08);  
+  color: #e0e0e0;  
+  font-size: 26px;  
+  display: flex;  
+  justify-content: center;  
+  align-items: center;  
+  cursor: pointer;  
+  transition: all 0.3s ease;  
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);  
+}  
 
-    /* Spinner */
-    .spinner {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 60px;
-      height: 60px;
-      border-radius: 50%;
-      border: 4px solid rgba(255, 255, 255, 0.1);
-      border-top: 4px solid #0cfbd8;
-      animation: spin 1s linear infinite;
-      z-index: 20;
-    }
-    @keyframes spin {
-      0% { transform: translate(-50%, -50%) rotate(0deg); }
-      100% { transform: translate(-50%, -50%) rotate(360deg); }
-    }
-  </style>
-</head>
-<body>
-  <div class="notification" id="notification">
-    Link copied to clipboard!
-  </div>
-  <div class="spinner" id="spinner"></div>
-  <div class="container">
-    <!-- Status Bar -->
-    <div class="status glass" id="status">
-      <div class="connection-status">
-        <div class="status-indicator" id="statusIndicator"></div>
-        <span id="statusText">CONNECTING</span>
-      </div>
-      <div class="timer" id="timer" style="display: none;">
-        <i class="fas fa-clock"></i>
-        <span id="timerDisplay">00:00:00</span>
-      </div>
-    </div>
-    <!-- Connection Info -->
-    <div class="connection-info" id="connectionInfo"></div>
-    <!-- Fullscreen Toggle -->
-    <div class="fullscreen-btn glass" id="fullscreenBtn">
-      <i class="fas fa-expand"></i>
-    </div>
-    <div class="video-container glass">
+.control-btn:hover {  
+  background: rgba(30, 34, 50, 0.9);  
+  transform: translateY(-6px);  
+  box-shadow: 0 16px 50px rgba(0, 0, 0, 0.5);  
+}  
+
+.control-btn:active {  
+  transform: translateY(0) scale(0.94);  
+}  
+
+#endBtn {  
+  background: rgba(200, 30, 50, 0.9);  
+}  
+
+#endBtn:hover {  
+  background: rgba(220, 50, 70, 0.9);  
+}  
+
+/* ----------------------------------------------------------  
+   FULLSCREEN BUTTON (TOP RIGHT)  
+---------------------------------------------------------- */  
+.fullscreen-btn {  
+  position: fixed;  
+  top: 32px;  
+  right: 32px;  
+  width: 42px;  
+  height: 42px;  
+  border-radius: 50%;  
+  background: rgba(20, 24, 36, 0.85);  
+  border: 1px solid rgba(255, 255, 255, 0.08);  
+  color: #e0e0e0;  
+  display: flex;  
+  align-items: center;  
+  justify-content: center;  
+  font-size: 22px;  
+  cursor: pointer;  
+  z-index: 10;  
+  transition: all 0.3s;  
+  backdrop-filter: blur(10px);  
+  -webkit-backdrop-filter: blur(10px);  
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);  
+}  
+
+.fullscreen-btn:hover {  
+  background: rgba(30, 34, 50, 0.9);  
+  transform: scale(1.12);  
+}  
+
+/* ----------------------------------------------------------  
+   NOTIFICATION BANNER (TOP CENTER)  
+---------------------------------------------------------- */  
+.notification {  
+  position: fixed;  
+  top: 20px;  
+  left: 50%;  
+  transform: translateX(-50%);  
+  background: rgba(20, 150, 150, 0.9);  
+  color: #ffffff;  
+  padding: 14px 32px;  
+  border-radius: 30px;  
+  z-index: 100;  
+  opacity: 0;  
+  transition: opacity 0.3s ease;  
+  backdrop-filter: blur(12px);  
+  -webkit-backdrop-filter: blur(12px);  
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);  
+  font-weight: 500;  
+  font-size: 16px;  
+  letter-spacing: 0.5px;  
+}  
+
+.notification.show {  
+  opacity: 1;  
+}  
+
+/* ----------------------------------------------------------  
+   CONNECTION STATUS INDICATOR  
+---------------------------------------------------------- */  
+.connection-status {  
+  display: flex;  
+  align-items: center;  
+  gap: 10px;  
+}  
+
+.status-indicator {  
+  width: 12px;  
+  height: 12px;  
+  border-radius: 50%;  
+  background: #e04b4b;  
+  box-shadow: 0 0 15px #e04b4b;  
+}  
+
+.status-indicator.connected {  
+  background: #10f0d8;  
+  box-shadow: 0 0 15px #10f0d8;  
+}  
+
+/* ----------------------------------------------------------  
+   GLASS EFFECT UTILITIES  
+---------------------------------------------------------- */  
+.glass {    
+  background: rgba(20, 24, 36, 0.85);    
+  backdrop-filter: blur(14px);    
+  -webkit-backdrop-filter: blur(14px);    
+  border: 1px solid rgba(255, 255, 255, 0.08);    
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4);    
+}  
+
+/* ----------------------------------------------------------  
+   COPY BUTTON STYLE  
+---------------------------------------------------------- */  
+.copy-btn {  
+  background: linear-gradient(to right, #0cfbd8, #0a8f91);  
+  border: none;  
+  color: #ffffff;  
+  padding: 14px 32px;  
+  border-radius: 30px;  
+  cursor: pointer;  
+  font-weight: 600;  
+  transition: all 0.3s;  
+  display: flex;  
+  align-items: center;  
+  justify-content: center;  
+  gap: 12px;  
+  box-shadow: 0 12px 40px rgba(10, 132, 255, 0.4);  
+  letter-spacing: 0.5px;  
+  font-size: 16px;  
+  backdrop-filter: blur(10px);  
+  -webkit-backdrop-filter: blur(10px);  
+}  
+
+.copy-btn:hover {  
+  transform: translateY(-3px);  
+  box-shadow: 0 15px 50px rgba(10, 132, 255, 0.6);  
+  background: linear-gradient(to right, #10f0d8, #0a4b5c);  
+}  
+
+/* ----------------------------------------------------------  
+   CONNECTION INFO STYLE  
+---------------------------------------------------------- */  
+.connection-info {  
+  position: fixed;  
+  top: 80px;  
+  left: 50%;  
+  transform: translateX(-50%);  
+  padding: 0;  
+  border-radius: 0;  
+  font-size: 14px;  
+  z-index: 10;  
+  backdrop-filter: none;  
+  border: none;  
+  text-align: center;  
+  max-width: 80%;  
+  box-shadow: none;  
+  color: #e0e0e0;  
+}  
+
+/* ----------------------------------------------------------  
+   ANIMATED PULSE FOR CALL BUTTON  
+---------------------------------------------------------- */  
+.pulse {  
+  animation: pulseAnimation 2s infinite;  
+}  
+
+@keyframes pulseAnimation {  
+  0% {  
+    box-shadow: 0 0 0 0 rgba(200, 30, 50, 0.7);  
+  }  
+  70% {  
+    box-shadow: 0 0 0 20px rgba(200, 30, 50, 0);  
+  }  
+  100% {  
+    box-shadow: 0 0 0 0 rgba(200, 30, 50, 0);  
+  }  
+}  
+
+/* ----------------------------------------------------------  
+   LOADING SPINNER  
+---------------------------------------------------------- */  
+.spinner {  
+  position: fixed;  
+  top: 50%;  
+  left: 50%;  
+  transform: translate(-50%, -50%);  
+  width: 60px;  
+  height: 60px;  
+  border-radius: 50%;  
+  border: 4px solid rgba(255, 255, 255, 0.1);  
+  border-top: 4px solid #0cfbd8;  
+  animation: spin 1s linear infinite;  
+  z-index: 20;  
+}  
+
+@keyframes spin {  
+  0% { transform: translate(-50%, -50%) rotate(0deg); }  
+  100% { transform: translate(-50%, -50%) rotate(360deg); }  
+}  
+
+/* ----------------------------------------------------------  
+   TYPOGRAPHY  
+---------------------------------------------------------- */  
+h1, h2, h3, h4, h5, h6 {  
+  font-weight: 600;  
+  letter-spacing: -0.5px;  
+}  
+
+/* ----------------------------------------------------------  
+   RESPONSIVE ADJUSTMENTS  
+---------------------------------------------------------- */  
+@media (max-width: 768px) {  
+  .controls {  
+    gap: 18px;  
+    padding: 15px 24px;  
+  }  
+    
+  .control-btn {  
+    width: 64px;  
+    height: 64px;  
+    font-size: 22px;  
+  }  
+    
+  .status {  
+    padding: 10px 20px;  
+    font-size: 13px;  
+  }  
+    
+  .fullscreen-btn {  
+    width: 36px;  
+    height: 36px;  
+    font-size: 18px;  
+  }  
+    
+  #localVideo {  
+    bottom: 100px;  
+    right: 20px;  
+  }  
+}
+
+  </style>  
+</head>  
+<body>  
+    
+  <div class="notification" id="notification">  
+    Link copied to clipboard!  
+  </div>    <div class="spinner" id="spinner"></div>    <div class="container">  
+    <!-- STATUS BAR (top center) -->  
+    <div class="status glass" id="status">  
+      <div class="connection-status">  
+        <div class="status-indicator" id="statusIndicator"></div>  
+        <span id="statusText">CONNECTING</span>  
+      </div>  
+      <div class="timer" id="timer" style="display: none;">  
+        <i class="fas fa-clock"></i>  
+        <span id="timerDisplay">00:00:00</span>  
+      </div>  
+    </div>  <!-- CONNECTION INFO -->  
+<div class="connection-info" id="connectionInfo"></div>  
+
+<!-- FULLSCREEN TOGGLE (top right) -->  
+<div class="fullscreen-btn glass" id="fullscreenBtn">  
+  <i class="fas fa-expand"></i>  
+</div>  
+  
+<div class="video-container glass">
       <!-- Remote Video with Glowing Border -->
       <div class="glow-border">
         <div class="content">
@@ -401,10 +519,7 @@
   </div>
 
 
-    <!-- PeerJS library -->   
-  <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>   
-  
-  <script>  
+      <!-- PeerJS library -->    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>    <script>  
     const MAX_RETRIES = 3;  
     const RETRY_DELAY = 3000;  
   
@@ -780,7 +895,6 @@
     });  
   
     init();  
-
-  </script>
-</body>
-</html>
+  </script>  
+</body>  
+</html>  

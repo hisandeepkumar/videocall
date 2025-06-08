@@ -73,16 +73,16 @@
     .glow-border::before {
       content: '';
       position: absolute;
-      top: -4px;
-      left: -4px;
-      right: -4px;
-      bottom: -4px;
+      top: -8px;
+      left: -8px;
+      right: -8px;
+      bottom: -8px;
       border-radius: 0;
       background: linear-gradient(130deg, #ff0057, #ff7a00, #00ffe1, #ff00f2, #ff0057);
       background-size: 400%;
       animation: borderGlow 6s linear infinite;
       z-index: -1;
-      filter: blur(10px);
+      filter: blur(2px);
     }
     
     @media (min-width: 768px) {
@@ -99,7 +99,7 @@
       right: 0;
       bottom: 0;
       border-radius: 0;
-      padding: 2px;
+      padding: 1px;
       background: linear-gradient(130deg, #ff0057, #ff7a00, #00ffe1, #ff00f2, #ff0057);
       background-size: 400%;
       animation: borderGlow 6s linear infinite;
@@ -527,48 +527,6 @@
       100% { transform: translate(-50%, -50%) rotate(360deg); }
     }
     
-    /* Orientation Warning */
-    .orientation-warning {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(11, 15, 30, 0.95);
-      z-index: 1000;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      text-align: center;
-      padding: 20px;
-      color: white;
-    }
-    
-    .orientation-warning i {
-      font-size: 64px;
-      margin-bottom: 20px;
-      color: #0cfbd8;
-    }
-    
-    .orientation-warning p {
-      font-size: 24px;
-      margin-bottom: 30px;
-      max-width: 80%;
-    }
-    
-    @media (orientation: landscape) {
-      .orientation-warning {
-        display: none !important;
-      }
-    }
-    
-    @media (orientation: portrait) and (max-width: 767px) {
-      .orientation-warning {
-        display: flex;
-      }
-    }
-    
     /* Landscape adjustments */
     @media (orientation: landscape) and (max-height: 500px) {
       #localVideo {
@@ -601,23 +559,6 @@
         padding: 3px 10px;
       }
     }
-    
-    /* Portrait adjustments */
-    @media (orientation: portrait) {
-      .video-container {
-        border-radius: 0;
-        margin: 0;
-      }
-      
-      .glow-border::before,
-      .glow-border::after {
-        border-radius: 0;
-      }
-      
-      .content {
-        border-radius: 0;
-      }
-    }
   </style>
 </head>
 <body>
@@ -626,11 +567,6 @@
   </div>
   
   <div class="spinner" id="spinner"></div>
-  
-  <div class="orientation-warning">
-    <i class="fas fa-sync-alt fa-spin"></i>
-    <p>Please rotate your device to landscape mode for the best experience</p>
-  </div>
   
   <div class="container">
     <!-- Status Bar -->
@@ -709,19 +645,6 @@
     const connectionInfo = document.getElementById('connectionInfo');  
     const notification = document.getElementById('notification');  
     const spinner = document.getElementById('spinner');  
-    const orientationWarning = document.querySelector('.orientation-warning');
-
-    // Check orientation on load and resize
-    function checkOrientation() {
-      if (window.innerHeight > window.innerWidth && window.innerWidth < 768) {
-        orientationWarning.style.display = 'flex';
-      } else {
-        orientationWarning.style.display = 'none';
-      }
-    }
-    
-    window.addEventListener('resize', checkOrientation);
-    window.addEventListener('load', checkOrientation);
 
     // Swap videos when local video is tapped  
     localVideo.addEventListener('click', () => {  
@@ -797,12 +720,19 @@
           },  
           audio: {  
             echoCancellation: true,  
-            noiseSuppression: true,  
+            noiseSuppression: false,  
             autoGainControl: true,  
             channelCount: 1,  
             sampleRate: 48000,  
             sampleSize: 24,  
-            volume: 1.0  
+            latency: 0,  
+            volume: 1.0,
+            advanced: [  
+              { googEchoCancellation: true },  
+              { googAutoGainControl: true },  
+              { googNoiseSuppression: false },  
+              { googHighpassFilter: false }  
+            ]  
           }  
         });  
       } catch (err) {  

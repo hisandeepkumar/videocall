@@ -21,24 +21,6 @@
       position: relative;
     }
 
-    /* Gradient Background Animation */
-    .gradient-background {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: -1;
-      background: linear-gradient(120deg, #2a0a4b 0%, #5c0a91 30%, #0a8f91 60%, #0a4b5c 100%);
-      background-size: 400% 400%;
-      animation: gradientShift 25s ease infinite;
-    }
-    @keyframes gradientShift {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
-    }
-
     /* Container aur Video Container */
     .container {
       display: flex;
@@ -112,7 +94,7 @@
       height: 100%;
       border-radius: 40px;
       overflow: hidden;
-      background: #000; /* Solid background taaki neeche kuch na dikhe */
+      background: #000;
     }
 
     /* Video Elements */
@@ -141,7 +123,48 @@
       transform: scale(1.07);
     }
 
-    /* Controls Styling */
+    /* Status Bar */
+    .status {
+      position: fixed;
+      top: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 7px 16px;
+      background: rgba(15, 18, 28, 0.75);
+      border-radius: 30px;
+      font-weight: 600;
+      font-size: 15px;
+      z-index: 10;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
+      min-width: 220px;
+      text-align: center;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #e0e0e0;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .timer {
+      background: rgba(5, 8, 15, 0.6);
+      padding: 6px 16px;
+      border-radius: 22px;
+      font-size: 13px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #b0e0e6;
+    }
+    .timer i {
+      margin-right: 6px;
+      color: #10f0d8;
+    }
+
+    /* Controls */
     .controls {
       position: fixed;
       bottom: 22px;
@@ -186,13 +209,174 @@
     #endBtn:hover {
       background: rgba(220, 50, 70, 0.9);
     }
+
+    /* Fullscreen Button */
+    .fullscreen-btn {
+      position: fixed;
+      top: 32px;
+      right: 32px;
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: rgba(20, 24, 36, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: #e0e0e0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      cursor: pointer;
+      z-index: 10;
+      transition: all 0.3s;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+    }
+    .fullscreen-btn:hover {
+      background: rgba(30, 34, 50, 0.9);
+      transform: scale(1.12);
+    }
+
+    /* Notification */
+    .notification {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(20, 150, 150, 0.9);
+      color: #ffffff;
+      padding: 14px 32px;
+      border-radius: 30px;
+      z-index: 100;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+      font-weight: 500;
+      font-size: 16px;
+      letter-spacing: 0.5px;
+    }
+    .notification.show {
+      opacity: 1;
+    }
+
+    /* Connection Status */
+    .connection-status {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .status-indicator {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #e04b4b;
+      box-shadow: 0 0 15px #e04b4b;
+    }
+    .status-indicator.connected {
+      background: #10f0d8;
+      box-shadow: 0 0 15px #10f0d8;
+    }
+
+    /* Glass Effect */
+    .glass {
+      background: rgba(20, 24, 36, 0.85);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
+    }
+
+    /* Copy Button */
+    .copy-btn {
+      background: linear-gradient(to right, #0cfbd8, #0a8f91);
+      border: none;
+      color: #ffffff;
+      padding: 14px 32px;
+      border-radius: 30px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      box-shadow: 0 12px 40px rgba(10, 132, 255, 0.4);
+      letter-spacing: 0.5px;
+      font-size: 16px;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+    .copy-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 15px 50px rgba(10, 132, 255, 0.6);
+      background: linear-gradient(to right, #10f0d8, #0a4b5c);
+    }
+
+    /* Connection Info */
+    .connection-info {
+      position: fixed;
+      top: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 0;
+      border-radius: 0;
+      font-size: 14px;
+      z-index: 10;
+      backdrop-filter: none;
+      border: none;
+      text-align: center;
+      max-width: 80%;
+      box-shadow: none;
+      color: #e0e0e0;
+    }
+
+    /* Spinner */
+    .spinner {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      border: 4px solid rgba(255, 255, 255, 0.1);
+      border-top: 4px solid #0cfbd8;
+      animation: spin 1s linear infinite;
+      z-index: 20;
+    }
+    @keyframes spin {
+      0% { transform: translate(-50%, -50%) rotate(0deg); }
+      100% { transform: translate(-50%, -50%) rotate(360deg); }
+    }
   </style>
 </head>
 <body>
-  <div class="gradient-background"></div>
+  <div class="notification" id="notification">
+    Link copied to clipboard!
+  </div>
+  <div class="spinner" id="spinner"></div>
   <div class="container">
+    <!-- Status Bar -->
+    <div class="status glass" id="status">
+      <div class="connection-status">
+        <div class="status-indicator" id="statusIndicator"></div>
+        <span id="statusText">CONNECTING</span>
+      </div>
+      <div class="timer" id="timer" style="display: none;">
+        <i class="fas fa-clock"></i>
+        <span id="timerDisplay">00:00:00</span>
+      </div>
+    </div>
+    <!-- Connection Info -->
+    <div class="connection-info" id="connectionInfo"></div>
+    <!-- Fullscreen Toggle -->
+    <div class="fullscreen-btn glass" id="fullscreenBtn">
+      <i class="fas fa-expand"></i>
+    </div>
     <div class="video-container glass">
-      <!-- Remote Video ke saath Glowing Border -->
+      <!-- Remote Video with Glowing Border -->
       <div class="glow-border">
         <div class="content">
           <video id="remoteVideo" autoplay playsinline></video>
@@ -202,11 +386,11 @@
       <video id="localVideo" autoplay muted playsinline></video>
       <!-- Controls -->
       <div class="controls">
-        <div class="control-btn glass" id="muteBtn">
-          <i class="fas fa-microphone"></i>
-        </div>
         <div class="control-btn glass" id="switchCameraBtn">
           <i class="fas fa-camera"></i>
+        </div>
+        <div class="control-btn glass" id="muteBtn">
+          <i class="fas fa-microphone"></i>
         </div>
         <div class="control-btn pulse glass" id="endBtn">
           <i class="fas fa-phone-slash"></i>
@@ -214,92 +398,377 @@
       </div>
     </div>
   </div>
-
-  <!-- PeerJS Library -->
   <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
   <script>
+    const MAX_RETRIES = 3;
+    const RETRY_DELAY = 3000;
+
     let peer;
     let localStream;
+    let remoteStream = null;
     let currentCall;
     let isMuted = false;
     let currentCamera = 'user';
+    let connectionRetries = 0;
+    let callStartTime = 0;
+    let timerInterval = null;
+    let closeConn = null;
+    let generatedPeerId = null;
+    let isSwapped = false;
 
     const localVideo = document.getElementById('localVideo');
     const remoteVideo = document.getElementById('remoteVideo');
+    const statusText = document.getElementById('statusText');
+    const statusIndicator = document.getElementById('statusIndicator');
+    const timerDisplay = document.getElementById('timerDisplay');
+    const timerEl = document.getElementById('timer');
+    const fullscreenBtn = document.getElementById('fullscreenBtn');
+    const connectionInfo = document.getElementById('connectionInfo');
+    const notification = document.getElementById('notification');
+    const spinner = document.getElementById('spinner');
 
-    // Media Access aur Peer Setup
-    async function init() {
-      try {
-        localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-        localVideo.srcObject = localStream;
+    localVideo.addEventListener('click', () => {
+      if (!remoteStream) return;
+      isSwapped = !isSwapped;
+      const videoContainer = document.querySelector('.video-container');
+      if (isSwapped) {
+        videoContainer.classList.add('swapped');
+      } else {
+        videoContainer.classList.remove('swapped');
+      }
+    });
 
-        peer = new Peer();
+    function showNotification(message) {
+      notification.textContent = message;
+      notification.classList.add('show');
+      setTimeout(() => {
+        notification.classList.remove('show');
+      }, 2000);
+    }
 
-        peer.on('open', (id) => {
-          console.log('My Peer ID:', id);
-          // Yahan peer ID display ya link generate kar sakte hain
-        });
-
-        peer.on('call', (call) => {
-          currentCall = call;
-          call.answer(localStream);
-          call.on('stream', (remoteStream) => {
-            remoteVideo.srcObject = remoteStream;
-          });
-        });
-      } catch (err) {
-        console.error('Error accessing media devices:', err);
+    function updateStatus(status, isConnected = false) {
+      statusText.textContent = status;
+      if (isConnected) {
+        statusIndicator.classList.add('connected');
+        statusIndicator.style.background = '#10f0d8';
+        statusIndicator.style.boxShadow = '0 0 15px #10f0d8';
+      } else {
+        statusIndicator.classList.remove('connected');
+        statusIndicator.style.background = '#e04b4b';
+        statusIndicator.style.boxShadow = '0 0 15px #e04b4b';
       }
     }
 
-    // Mute/Unmute Functionality
-    document.getElementById('muteBtn').addEventListener('click', () => {
-      isMuted = !isMuted;
-      localStream.getAudioTracks().forEach(track => {
-        track.enabled = !isMuted;
-      });
-      const icon = document.querySelector('#muteBtn i');
-      icon.classList.toggle('fa-microphone');
-      icon.classList.toggle('fa-microphone-slash');
-    });
+    function startTimer() {
+      callStartTime = Date.now();
+      timerEl.style.display = 'flex';
+      timerInterval = setInterval(() => {
+        const elapsed = Date.now() - callStartTime;
+        const hours = Math.floor(elapsed / 3600000);
+        const minutes = Math.floor((elapsed % 3600000) / 60000);
+        const seconds = Math.floor((elapsed % 60000) / 1000);
+        timerDisplay.textContent =
+          `${hours.toString().padStart(2, '0')}:` +
+          `${minutes.toString().padStart(2, '0')}:` +
+          `${seconds.toString().padStart(2, '0')}`;
+      }, 1000);
+    }
 
-    // Camera Switch Functionality
-    document.getElementById('switchCameraBtn').addEventListener('click', async () => {
+    function stopTimer() {
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+      timerEl.style.display = 'none';
+    }
+
+    async function getMedia(cameraFacingMode = 'user') {
       try {
-        currentCamera = currentCamera === 'user' ? 'environment' : 'user';
-        const newStream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: currentCamera },
-          audio: true
-        });
-
-        if (currentCall) {
-          const videoSender = currentCall.peerConnection.getSenders().find(s => s.track.kind === 'video');
-          if (videoSender) {
-            videoSender.replaceTrack(newStream.getVideoTracks()[0]);
+        return await navigator.mediaDevices.getUserMedia({
+          video: {
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+            frameRate: { ideal: 60 },
+            facingMode: cameraFacingMode
+          },
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: false,
+            autoGainControl: true,
+            channelCount: 1,
+            sampleRate: 48000,
+            sampleSize: 24,
+            latency: 0,
+            volume: 1.0,
+            advanced: [
+              { googEchoCancellation: true },
+              { googAutoGainControl: true },
+              { googNoiseSuppression: false },
+              { googHighpassFilter: false }
+            ]
           }
+        });
+      } catch (err) {
+        console.error('Error accessing media devices:', err);
+        connectionInfo.innerHTML =
+          'Failed to access camera and microphone. Please check permissions.';
+        throw err;
+      }
+    }
+
+    async function init() {
+      updateStatus('CONNECTING');
+      spinner.style.display = 'block';
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const code = urlParams.get('code');
+
+      try {
+        localStream = await getMedia();
+        localVideo.srcObject = localStream;
+
+        if (code) {
+          generatedPeerId = code;
+          connectionInfo.innerHTML = '';
+          setupReceiver(code);
+        } else {
+          generatedPeerId = generateId();
+          updateStatus('AWAITING CONNECTION');
+          connectionInfo.innerHTML =
+            `<button class="copy-btn glass" id="copyLinkBtn">
+               <i class="fas fa-copy"></i> Copy Call Link
+             </button>`;
+
+          peer = new Peer(generatedPeerId, {
+            secure: true,
+            host: '0.peerjs.com',
+            port: 443
+          });
+
+          peer.on('open', () => {
+            updateStatus('READY');
+            spinner.style.display = 'none';
+          });
+
+          peer.on('call', call => {
+            call.answer(localStream);
+            currentCall = call;
+            updateStatus('', true);
+            connectionInfo.innerHTML = '';
+            startTimer();
+            triggerVibration();
+            spinner.style.display = 'none';
+
+            call.on('stream', stream => {
+              remoteStream = stream;
+              remoteVideo.srcObject = remoteStream;
+              setupCloseDataConnection(call.peer);
+            });
+
+            call.on('close', () => {
+              updateStatus('DISCONNECTED');
+              stopTimer();
+              setTimeout(() => {
+                window.close();
+              }, 500);
+            });
+
+            call.on('error', (err) => {
+              console.error('Call error:', err);
+              updateStatus('CALL ERROR');
+              connectionInfo.innerHTML = `Error: ${err.message || err.type}`;
+              stopTimer();
+              spinner.style.display = 'none';
+            });
+          });
         }
 
-        localStream.getTracks().forEach(track => track.stop());
-        localStream = newStream;
-        localVideo.srcObject = localStream;
+        peer.on('error', (err) => {
+          console.error('PeerJS error:', err);
+          updateStatus('PEER ERROR');
+          connectionInfo.innerHTML = `Error: ${err.message || err.type}`;
+          stopTimer();
+          spinner.style.display = 'none';
+
+          if (code && connectionRetries < MAX_RETRIES) {
+            connectionRetries++;
+            connectionInfo.innerHTML +=
+              `<br>Retrying in 3 seconds (${connectionRetries}/${MAX_RETRIES})...`;
+            setTimeout(() => setupReceiver(code), RETRY_DELAY);
+          }
+        });
+
       } catch (err) {
-        console.error('Error switching camera:', err);
+        console.error('Initialization error:', err);
+        updateStatus('INIT ERROR');
+        connectionInfo.innerHTML = 'Failed to initialize. Please refresh the page.';
+        spinner.style.display = 'none';
+      }
+    }
+
+    function setupReceiver(code) {
+      peer = new Peer({ secure: true, host: '0.peerjs.com', port: 443 });
+
+      peer.on('open', () => {
+        const call = peer.call(code, localStream);
+        currentCall = call;
+        updateStatus('CONNECTING');
+
+        call.on('stream', stream => {
+          updateStatus('', true);
+          connectionInfo.innerHTML = '';
+          remoteStream = stream;
+          remoteVideo.srcObject = remoteStream;
+          startTimer();
+          triggerVibration();
+          spinner.style.display = 'none';
+          setupCloseDataConnection(call.peer);
+        });
+
+        call.on('close', () => {
+          updateStatus('DISCONNECTED');
+          stopTimer();
+          setTimeout(() => {
+            window.close();
+          }, 500);
+        });
+
+        call.on('error', (err) => {
+          console.error('Call error:', err);
+          updateStatus('CALL ERROR');
+          connectionInfo.innerHTML = `Error: ${err.message || err.type}`;
+          stopTimer();
+          spinner.style.display = 'none';
+
+          if (connectionRetries < MAX_RETRIES) {
+            connectionRetries++;
+            connectionInfo.innerHTML +=
+              `<br>Retrying in 3 seconds (${connectionRetries}/${MAX_RETRIES})...`;
+            setTimeout(() => setupReceiver(code), RETRY_DELAY);
+          }
+        });
+      });
+    }
+
+    function generateId() {
+      return Math.random().toString(36).substring(2, 8).toUpperCase();
+    }
+
+    function setupCloseDataConnection(remoteId) {
+      if (closeConn) {
+        closeConn.close();
+        closeConn = null;
+      }
+      closeConn = peer.connect(remoteId);
+
+      closeConn.on('open', () => {});
+
+      closeConn.on('data', data => {
+        if (data === 'close-call') {
+          window.close();
+        }
+      });
+
+      closeConn.on('error', err => {
+        console.error('DataConnection error:', err);
+      });
+    }
+
+    function triggerVibration() {
+      if (navigator.vibrate) {
+        navigator.vibrate(180);
+      }
+    }
+
+    document.addEventListener('click', (e) => {
+      if (e.target.id === 'copyLinkBtn' || e.target.closest('#copyLinkBtn')) {
+        const link = `${window.location.href.split('?')[0]}?code=${generatedPeerId}`;
+        navigator.clipboard.writeText(link).then(() => {
+          showNotification('Call link copied to clipboard!');
+        }).catch(err => {
+          console.error('Copy failed:', err);
+          showNotification('Failed to copy link');
+        });
       }
     });
 
-    // Call End Functionality
-    document.getElementById('endBtn').addEventListener('click', () => {
+    document.getElementById('muteBtn').onclick = () => {
+      isMuted = !isMuted;
+      const audioTracks = localStream.getAudioTracks();
+      if (audioTracks.length > 0) {
+        audioTracks[0].enabled = !isMuted;
+      }
+      const micIcon = document.querySelector('#muteBtn i');
+      if (isMuted) {
+        micIcon.className = 'fas fa-microphone-slash';
+        document.getElementById('muteBtn').style.background = 'rgba(200, 30, 50, 0.9)';
+      } else {
+        micIcon.className = 'fas fa-microphone';
+        document.getElementById('muteBtn').style.background = 'rgba(20, 24, 36, 0.85)';
+      }
+    };
+
+    document.getElementById('switchCameraBtn').onclick = async () => {
+      try {
+        currentCamera = currentCamera === 'user' ? 'environment' : 'user';
+        const newStream = await getMedia(currentCamera);
+
+        if (currentCall && currentCall.peerConnection) {
+          const senders = currentCall.peerConnection.getSenders();
+          const videoSender = senders.find(s => s.track.kind === 'video');
+          const audioSender = senders.find(s => s.track.kind === 'audio');
+
+          if (videoSender && newStream.getVideoTracks()[0]) {
+            await videoSender.replaceTrack(newStream.getVideoTracks()[0]);
+          }
+          if (audioSender && newStream.getAudioTracks()[0]) {
+            await audioSender.replaceTrack(newStream.getAudioTracks()[0]);
+          }
+        }
+
+        const audioTracks = newStream.getAudioTracks();
+        if (audioTracks.length > 0) {
+          audioTracks[0].enabled = !isMuted;
+        }
+
+        localVideo.srcObject = newStream;
+        if (localStream) {
+          localStream.getTracks().forEach(track => track.stop());
+        }
+        localStream = newStream;
+      } catch (err) {
+        console.error('Error switching camera:', err);
+        connectionInfo.innerHTML = 'Error switching camera. Please try again.';
+      }
+    };
+
+    document.getElementById('endBtn').onclick = () => {
+      if (closeConn && closeConn.open) {
+        closeConn.send('close-call');
+      }
       if (currentCall) {
         currentCall.close();
       }
       if (peer) {
         peer.destroy();
       }
-      localStream.getTracks().forEach(track => track.stop());
-      window.close();
+      updateStatus('ENDING CALL');
+      stopTimer();
+      setTimeout(() => {
+        window.close();
+      }, 200);
+    };
+
+    fullscreenBtn.addEventListener('click', () => {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen();
+        fullscreenBtn.innerHTML = '<i class="fas fa-compress"></i>';
+      } else {
+        document.exitFullscreen();
+        fullscreenBtn.innerHTML = '<i class="fas fa-expand"></i>';
+      }
     });
 
-    // Application Start
     init();
   </script>
 </body>

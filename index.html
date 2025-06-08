@@ -55,7 +55,7 @@
   overflow: hidden;  
   border-radius: 24px;  
   margin: 20px;  
-  z-index: 2; 
+   
   background: rgba(10, 12, 20, 0.4);  
   backdrop-filter: blur(12px);  
   -webkit-backdrop-filter: blur(12px);  
@@ -497,7 +497,7 @@ h1, h2, h3, h4, h5, h6 {
 <div class="fullscreen-btn glass" id="fullscreenBtn">  
   <i class="fas fa-expand"></i>  
 </div>  
-<div class="glow-border">  
+  
 <div class="video-container glass">  
   
   <!-- Remote video (fills glass container) -->  
@@ -506,7 +506,8 @@ h1, h2, h3, h4, h5, h6 {
   <!-- Local video (corner preview, tap to swap) -->  
   <video id="localVideo" autoplay muted playsinline></video>  
     
-  <!-- CONTROLS (bottom center) -->  
+  <!-- CONTROLS (bottom center) --> 
+  <div class="glow-border">
   <div class="controls">  
     <div class="control-btn glass" id="switchCameraBtn">  
       <i class="fas fa-camera"></i>  
@@ -518,8 +519,8 @@ h1, h2, h3, h4, h5, h6 {
       <i class="fas fa-phone-slash"></i>  
     </div>  
   </div>  
-</div>
   </div>
+</div>
 
   </div>    <!-- PeerJS library -->    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>    <script>  
     const MAX_RETRIES = 3;  

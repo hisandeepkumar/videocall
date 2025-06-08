@@ -496,12 +496,12 @@ h1, h2, h3, h4, h5, h6 {
 <div class="fullscreen-btn glass" id="fullscreenBtn">  
   <i class="fas fa-expand"></i>  
 </div>  
-  
+<div class="glow-border">  
 <div class="video-container glass">  
-  <div class="glow-border">
+  
   <!-- Remote video (fills glass container) -->  
   <video id="remoteVideo" autoplay playsinline></video>  
-   </div>
+   
   <!-- Local video (corner preview, tap to swap) -->  
   <video id="localVideo" autoplay muted playsinline></video>  
     
@@ -518,6 +518,7 @@ h1, h2, h3, h4, h5, h6 {
     </div>  
   </div>  
 </div>
+  </div>
 
   </div>    <!-- PeerJS library -->    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>    <script>  
     const MAX_RETRIES = 3;  

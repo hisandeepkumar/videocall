@@ -77,6 +77,55 @@
 }  
 
 /* ----------------------------------------------------------  
+    Glowing Border ke Styles
+---------------------------------------------------------- */ 
+
+/* Glowing Border ke Styles */
+    .glow-border {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      border-radius: 40px;
+      z-index: 1;
+    }
+    .glow-border::before {
+      content: '';
+      position: absolute;
+      top: -1px;
+      left: -1px;
+      right: -1px;
+      bottom: -1px;
+      border-radius: 48px;
+      background: linear-gradient(130deg, #ff0057, #ff7a00, #00ffe1, #ff00f2, #ff0057);
+      background-size: 400%;
+      animation: borderGlow 6s linear infinite;
+      z-index: -1;
+      filter: blur(5px);
+    }
+    .glow-border::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      border-radius: 40px;
+      padding: 1px;
+      background: linear-gradient(130deg, #ff0057, #ff7a00, #00ffe1, #ff00f2, #ff0057);
+      background-size: 400%;
+      animation: borderGlow 6s linear infinite;
+      z-index: 1;
+      -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+    }
+    @keyframes borderGlow {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    
+/* ----------------------------------------------------------  
    VIDEO ELEMENTS (FULLSCREEN & LOCAL PREVIEW)  
 ---------------------------------------------------------- */  
 #remoteVideo {  

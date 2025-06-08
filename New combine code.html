@@ -27,54 +27,86 @@
 /* ----------------------------------------------------------  
    ANIMATED GRADIENT BACKGROUND (PURPLE ➔ TEAL)   
 ---------------------------------------------------------- */  
-.gradient-background {  
-  position: fixed;  
-  top: 0;  
-  left: 0;  
-  width: 100%;  
-  height: 100%;  
-  z-index: -1;  
-  background: linear-gradient(120deg,  
-    #2a0a4b 0%,  
-    #5c0a91 30%,  
-    #0a8f91 60%,  
-    #0a4b5c 100%);  
-  background-size: 400% 400%;  
-  animation: gradientShift 25s ease infinite;  
-}  
-
-@keyframes gradientShift {  
-  0% { background-position: 0% 50%; }  
-  50% { background-position: 100% 50%; }  
-  100% { background-position: 0% 50%; }  
-}  
 
 /* ----------------------------------------------------------  
    MODERN GLASS-STYLE UI ELEMENTS   
 ---------------------------------------------------------- */  
-.container {  
-  display: flex;  
-  flex-direction: column;  
-  height: 100vh;  
-  position: relative;  
-  overflow: hidden;  
-}  
+  /* Container aur Video Container */
+    .container {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      position: relative;
+      overflow: hidden;
+    }
+    .video-container {
+      flex: 1;
+      position: relative;
+      overflow: visible;
+      border-radius: 40px;
+      margin: 20px;
+      background: rgba(10, 12, 20, 0.4);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 0 8px 2px rgba(255, 255, 255, 0.6), 0 24px 60px rgba(0, 0, 0, 0.4), inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+    }
 
-.video-container {  
-  flex: 1;  
-  position: relative;  
-  overflow: hidden;  
-  border-radius: 24px;  
-  margin: 20px;  
-  background: rgba(10, 12, 20, 0.4);  
-  backdrop-filter: blur(12px);  
-  -webkit-backdrop-filter: blur(12px);  
-  border: 3px solid rgba(255, 255, 255, 0.8);  
-  box-shadow:  
-    0 0 8px 2px rgba(255, 255, 255, 0.6),  
-    0 24px 60px rgba(0, 0, 0, 0.4),  
-    inset 0 0 0 1px rgba(255, 255, 255, 0.05);  
-}  
+    /* Glowing Border ke Styles */
+    .glow-border {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      border-radius: 40px;
+      z-index: 1;
+    }
+    .glow-border::before {
+      content: '';
+      position: absolute;
+      top: -1px;
+      left: -1px;
+      right: -1px;
+      bottom: -1px;
+      border-radius: 48px;
+      background: linear-gradient(130deg, #ff0057, #ff7a00, #00ffe1, #ff00f2, #ff0057);
+      background-size: 400%;
+      animation: borderGlow 6s linear infinite;
+      z-index: -1;
+      filter: blur(5px);
+    }
+    .glow-border::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      border-radius: 40px;
+      padding: 1px;
+      background: linear-gradient(130deg, #ff0057, #ff7a00, #00ffe1, #ff00f2, #ff0057);
+      background-size: 400%;
+      animation: borderGlow 6s linear infinite;
+      z-index: 1;
+      -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+    }
+    @keyframes borderGlow {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    /* Content ke andar Video */
+    .content {
+      position: relative;
+      z-index: 2;
+      width: 100%;
+      height: 100%;
+      border-radius: 40px;
+      overflow: hidden;
+      background: #000;
+    }
+
 
 /* ----------------------------------------------------------  
    VIDEO ELEMENTS (FULLSCREEN & LOCAL PREVIEW)  
@@ -440,7 +472,7 @@ h1, h2, h3, h4, h5, h6 {
   </style>  
 </head>  
 <body>  
-  <div class="gradient-background"></div>  
+    
   <div class="notification" id="notification">  
     Link copied to clipboard!  
   </div>    <div class="spinner" id="spinner"></div>    <div class="container">  
@@ -487,7 +519,7 @@ h1, h2, h3, h4, h5, h6 {
   </div>
 
 
-  </div>    <!-- PeerJS library -->    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>    <script>  
+      <!-- PeerJS library -->    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>    <script>  
     const MAX_RETRIES = 3;  
     const RETRY_DELAY = 3000;  
   

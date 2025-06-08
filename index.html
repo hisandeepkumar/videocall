@@ -399,378 +399,388 @@
       </div>
     </div>
   </div>
-  <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
-  <script>
-    const MAX_RETRIES = 3;
-    const RETRY_DELAY = 3000;
 
-    let peer;
-    let localStream;
-    let remoteStream = null;
-    let currentCall;
-    let isMuted = false;
-    let currentCamera = 'user';
-    let connectionRetries = 0;
-    let callStartTime = 0;
-    let timerInterval = null;
-    let closeConn = null;
-    let generatedPeerId = null;
-    let isSwapped = false;
 
-    const localVideo = document.getElementById('localVideo');
-    const remoteVideo = document.getElementById('remoteVideo');
-    const statusText = document.getElementById('statusText');
-    const statusIndicator = document.getElementById('statusIndicator');
-    const timerDisplay = document.getElementById('timerDisplay');
-    const timerEl = document.getElementById('timer');
-    const fullscreenBtn = document.getElementById('fullscreenBtn');
-    const connectionInfo = document.getElementById('connectionInfo');
-    const notification = document.getElementById('notification');
-    const spinner = document.getElementById('spinner');
+    <!-- PeerJS library -->   
+  <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>   
+  
+  <script>  
+    const MAX_RETRIES = 3;  
+    const RETRY_DELAY = 3000;  
+  
+    let peer;  
+    let localStream;  
+    let remoteStream = null;  
+    let currentCall;  
+    let isMuted = false;  
+    let currentCamera = 'user';  
+    let connectionRetries = 0;  
+    let callStartTime = 0;  
+    let timerInterval = null;  
+    let closeConn = null;  
+    let generatedPeerId = null;  
+    let isSwapped = false;  
+  
+    const localVideo = document.getElementById('localVideo');  
+    const remoteVideo = document.getElementById('remoteVideo');  
+    const statusText = document.getElementById('statusText');  
+    const statusIndicator = document.getElementById('statusIndicator');  
+    const timerDisplay = document.getElementById('timerDisplay');  
+    const timerEl = document.getElementById('timer');  
+    const fullscreenBtn = document.getElementById('fullscreenBtn');  
+    const connectionInfo = document.getElementById('connectionInfo');  
+    const notification = document.getElementById('notification');  
+    const spinner = document.getElementById('spinner');  
+  
+    // Swap videos when local video is tapped  
+    localVideo.addEventListener('click', () => {  
+      if (!remoteStream) return;  
+      isSwapped = !isSwapped;  
+      if (isSwapped) {  
+        remoteVideo.srcObject = localStream;  
+        localVideo.srcObject = remoteStream;  
+      } else {  
+        remoteVideo.srcObject = remoteStream;  
+        localVideo.srcObject = localStream;  
+      }  
+    });  
+  
+    function showNotification(message) {  
+      notification.textContent = message;  
+      notification.classList.add('show');  
+      setTimeout(() => {  
+        notification.classList.remove('show');  
+      }, 2000);  
+    }  
+  
+    function updateStatus(status, isConnected = false) {  
+      statusText.textContent = status;  
+      if (isConnected) {  
+        statusIndicator.classList.add('connected');  
+        statusIndicator.style.background = '#10f0d8';  
+        statusIndicator.style.boxShadow = '0 0 15px #10f0d8';  
+      } else {  
+        statusIndicator.classList.remove('connected');  
+        statusIndicator.style.background = '#e04b4b';  
+        statusIndicator.style.boxShadow = '0 0 15px #e04b4b';  
+      }  
+    }  
+  
+    function startTimer() {  
+      callStartTime = Date.now();  
+      timerEl.style.display = 'flex';  
+      timerInterval = setInterval(() => {  
+        const elapsed = Date.now() - callStartTime;  
+        const hours = Math.floor(elapsed / 3600000);  
+        const minutes = Math.floor((elapsed % 3600000) / 60000);  
+        const seconds = Math.floor((elapsed % 60000) / 1000);  
+        timerDisplay.textContent =  
+          `${hours.toString().padStart(2, '0')}:` +  
+          `${minutes.toString().padStart(2, '0')}:` +  
+          `${seconds.toString().padStart(2, '0')}`;  
+      }, 1000);  
+    }  
+  
+    function stopTimer() {  
+      if (timerInterval) {  
+        clearInterval(timerInterval);  
+        timerInterval = null;  
+      }  
+      timerEl.style.display = 'none';  
+    }  
+  
+    async function getMedia(cameraFacingMode = 'user') {  
+      try {  
+        // Enhanced audio constraints for crystal-clear quality  
+        return await navigator.mediaDevices.getUserMedia({  
+          video: {  
+            width: { ideal: 1280 },  
+            height: { ideal: 720 },  
+            frameRate: { ideal: 60 },  
+            facingMode: cameraFacingMode  
+          },  
+    /* ----------------------------------------------------------  
+       audio quality  
+    ---------------------------------------------------------- */  
+  audio: {  
+    echoCancellation: true,  
+    noiseSuppression: false,  
+    autoGainControl: true,  
+    channelCount: 1,  
+    sampleRate: 48000,  
+    sampleSize: 24,  
+    latency: 0,  
+    volume: 1.0, // Max allowed is 1.0  
+    advanced: [  
+      { googEchoCancellation: true },  
+      { googAutoGainControl: true },  
+      { googNoiseSuppression: false },  
+      { googHighpassFilter: false }  
+    ]  
+  }  
+});  
+      } catch (err) {  
+        console.error('Error accessing media devices:', err);  
+        connectionInfo.innerHTML =  
+          'Failed to access camera and microphone. Please check permissions.';  
+        throw err;  
+      }  
+    }  
+  
+    async function init() {  
+      updateStatus('CONNECTING');  
+      spinner.style.display = 'block';  
+  
+      const urlParams = new URLSearchParams(window.location.search);  
+      const code = urlParams.get('code');  
+  
+      try {  
+        localStream = await getMedia();  
+        localVideo.srcObject = localStream;  
+  
+        if (code) {  
+          // Receiver  
+          generatedPeerId = code;  
+          connectionInfo.innerHTML = '';  
+          setupReceiver(code);  
+        } else {  
+          // Caller  
+          generatedPeerId = generateId();  
+          updateStatus('AWAITING CONNECTION');  
+          connectionInfo.innerHTML =  
+            `<button class="copy-btn glass" id="copyLinkBtn">  
+               <i class="fas fa-copy"></i> Copy Call Link  
+             </button>`;  
+  
+          peer = new Peer(generatedPeerId, {  
+            secure: true,  
+            host: '0.peerjs.com',  
+            port: 443  
+          });  
+  
+          peer.on('open', () => {  
+            updateStatus('READY');  
+            spinner.style.display = 'none';  
+          });  
+  
+          peer.on('call', call => {  
+            call.answer(localStream);  
+            currentCall = call;  
+            updateStatus('', true);  
+            connectionInfo.innerHTML = '';  
+            startTimer();  
+            triggerVibration();  
+            spinner.style.display = 'none';  
+  
+            call.on('stream', stream => {  
+              remoteStream = stream;  
+              remoteVideo.srcObject = remoteStream;  
+              setupCloseDataConnection(call.peer);  
+            });  
+  
+            call.on('close', () => {  
+              updateStatus('DISCONNECTED');  
+              stopTimer();  
+              setTimeout(() => {  
+                window.close();  
+              }, 500);  
+            });  
+  
+            call.on('error', (err) => {  
+              console.error('Call error:', err);  
+              updateStatus('CALL ERROR');  
+              connectionInfo.innerHTML =  
+                `Error: ${err.message || err.type}`;  
+              stopTimer();  
+              spinner.style.display = 'none';  
+            });  
+          });  
+        }  
+  
+        peer.on('error', (err) => {  
+          console.error('PeerJS error:', err);  
+          updateStatus('PEER ERROR');  
+          connectionInfo.innerHTML =  
+            `Error: ${err.message || err.type}`;  
+          stopTimer();  
+          spinner.style.display = 'none';  
+  
+          if (code && connectionRetries < MAX_RETRIES) {  
+            connectionRetries++;  
+            connectionInfo.innerHTML +=  
+              `<br>Retrying in 3 seconds (${connectionRetries}/${MAX_RETRIES})...`;  
+            setTimeout(() => setupReceiver(code), RETRY_DELAY);  
+          }  
+        });  
+  
+      } catch (err) {  
+        console.error('Initialization error:', err);  
+        updateStatus('INIT ERROR');  
+        connectionInfo.innerHTML =  
+          'Failed to initialize. Please refresh the page.';  
+        spinner.style.display = 'none';  
+      }  
+    }  
+  
+    function setupReceiver(code) {  
+      peer = new Peer({ secure: true, host: '0.peerjs.com', port: 443 });  
+  
+      peer.on('open', () => {  
+        const call = peer.call(code, localStream);  
+        currentCall = call;  
+        updateStatus('CONNECTING');  
+  
+        call.on('stream', stream => {  
+          updateStatus('', true);  
+          connectionInfo.innerHTML = '';  
+          remoteStream = stream;  
+          remoteVideo.srcObject = remoteStream;  
+          startTimer();  
+          triggerVibration();  
+          spinner.style.display = 'none';  
+          setupCloseDataConnection(call.peer);  
+        });  
+  
+        call.on('close', () => {  
+          updateStatus('DISCONNECTED');  
+          stopTimer();  
+          setTimeout(() => {  
+            window.close();  
+          }, 500);  
+        });  
+  
+        call.on('error', (err) => {  
+          console.error('Call error:', err);  
+          updateStatus('CALL ERROR');  
+          connectionInfo.innerHTML =  
+            `Error: ${err.message || err.type}`;  
+          stopTimer();  
+          spinner.style.display = 'none';  
+  
+          if (connectionRetries < MAX_RETRIES) {  
+            connectionRetries++;  
+            connectionInfo.innerHTML +=  
+              `<br>Retrying in 3 seconds (${connectionRetries}/${MAX_RETRIES})...`;  
+            setTimeout(() => setupReceiver(code), RETRY_DELAY);  
+          }  
+        });  
+      });  
+    }  
+  
+    function generateId() {  
+      return Math.random().toString(36).substring(2, 8).toUpperCase();  
+    }  
+  
+    function setupCloseDataConnection(remoteId) {  
+      if (closeConn) {  
+        closeConn.close();  
+        closeConn = null;  
+      }  
+      closeConn = peer.connect(remoteId);  
+  
+      closeConn.on('open', () => {});  
+  
+      closeConn.on('data', data => {  
+        if (data === 'close-call') {  
+          window.close();  
+        }  
+      });  
+  
+      closeConn.on('error', err => {  
+        console.error('DataConnection error:', err);  
+      });  
+    }  
+  
+    function triggerVibration() {  
+      if (navigator.vibrate) {  
+        navigator.vibrate(180);  
+      }  
+    }  
+  
+    document.addEventListener('click', (e) => {  
+      if (e.target.id === 'copyLinkBtn' || e.target.closest('#copyLinkBtn')) {  
+        const link = `${window.location.href.split('?')[0]}?code=${generatedPeerId}`;  
+        navigator.clipboard.writeText(link).then(() => {  
+          showNotification('Call link copied to clipboard!');  
+        }).catch(err => {  
+          console.error('Copy failed:', err);  
+          showNotification('Failed to copy link');  
+        });  
+      }  
+    });  
+  
+    document.getElementById('muteBtn').onclick = () => {  
+      isMuted = !isMuted;  
+      const audioTracks = localStream.getAudioTracks();  
+      if (audioTracks.length > 0) {  
+        audioTracks[0].enabled = !isMuted;  
+      }  
+      const micIcon = document.querySelector('#muteBtn i');  
+      if (isMuted) {  
+        micIcon.className = 'fas fa-microphone-slash';  
+        document.getElementById('muteBtn').style.background = 'rgba(200, 30, 50, 0.9)';  
+      } else {  
+        micIcon.className = 'fas fa-microphone';  
+        document.getElementById('muteBtn').style.background = 'rgba(20, 24, 36, 0.85)';  
+      }  
+    };  
+  
+    document.getElementById('switchCameraBtn').onclick = async () => {  
+      try {  
+        currentCamera = currentCamera === 'user' ? 'environment' : 'user';  
+        const newStream = await getMedia(currentCamera);  
+        const videoTrack = newStream.getVideoTracks()[0];  
+  
+        if (currentCall && currentCall.peerConnection) {  
+          const sender = currentCall.peerConnection.getSenders()  
+            .find(s => s.track.kind === 'video');  
+          if (sender) sender.replaceTrack(videoTrack);  
+        }  
+  
+        const audioTracks = newStream.getAudioTracks();  
+        if (audioTracks.length > 0) {  
+          audioTracks[0].enabled = !isMuted;  
+        }  
+  
+        localVideo.srcObject = newStream;  
+        localStream.getTracks().forEach(track => track.stop());  
+        localStream = newStream;  
+      } catch (err) {  
+        console.error('Error switching camera:', err);  
+        connectionInfo.innerHTML =  
+          'Error switching camera. Please try again.';  
+      }  
+    };  
+  
+    document.getElementById('endBtn').onclick = () => {  
+      if (closeConn && closeConn.open) {  
+        closeConn.send('close-call');  
+      }  
+      if (currentCall) {  
+        currentCall.close();  
+      }  
+      if (peer) {  
+        peer.destroy();  
+      }  
+      updateStatus('ENDING CALL');  
+      stopTimer();  
+      setTimeout(() => {  
+        window.close();  
+      }, 200);  
+    };  
+  
+    fullscreenBtn.addEventListener('click', () => {  
+      if (!document.fullscreenElement) {  
+        document.documentElement.requestFullscreen();  
+        fullscreenBtn.innerHTML = '<i class="fas fa-compress"></i>';  
+      } else {  
+        document.exitFullscreen();  
+        fullscreenBtn.innerHTML = '<i class="fas fa-expand"></i>';  
+      }  
+    });  
+  
+    init();  
 
-    localVideo.addEventListener('click', () => {
-      if (!remoteStream) return;
-      isSwapped = !isSwapped;
-      const videoContainer = document.querySelector('.video-container');
-      if (isSwapped) {
-        videoContainer.classList.add('swapped');
-      } else {
-        videoContainer.classList.remove('swapped');
-      }
-    });
-
-    function showNotification(message) {
-      notification.textContent = message;
-      notification.classList.add('show');
-      setTimeout(() => {
-        notification.classList.remove('show');
-      }, 2000);
-    }
-
-    function updateStatus(status, isConnected = false) {
-      statusText.textContent = status;
-      if (isConnected) {
-        statusIndicator.classList.add('connected');
-        statusIndicator.style.background = '#10f0d8';
-        statusIndicator.style.boxShadow = '0 0 15px #10f0d8';
-      } else {
-        statusIndicator.classList.remove('connected');
-        statusIndicator.style.background = '#e04b4b';
-        statusIndicator.style.boxShadow = '0 0 15px #e04b4b';
-      }
-    }
-
-    function startTimer() {
-      callStartTime = Date.now();
-      timerEl.style.display = 'flex';
-      timerInterval = setInterval(() => {
-        const elapsed = Date.now() - callStartTime;
-        const hours = Math.floor(elapsed / 3600000);
-        const minutes = Math.floor((elapsed % 3600000) / 60000);
-        const seconds = Math.floor((elapsed % 60000) / 1000);
-        timerDisplay.textContent =
-          `${hours.toString().padStart(2, '0')}:` +
-          `${minutes.toString().padStart(2, '0')}:` +
-          `${seconds.toString().padStart(2, '0')}`;
-      }, 1000);
-    }
-
-    function stopTimer() {
-      if (timerInterval) {
-        clearInterval(timerInterval);
-        timerInterval = null;
-      }
-      timerEl.style.display = 'none';
-    }
-
-    async function getMedia(cameraFacingMode = 'user') {
-      try {
-        return await navigator.mediaDevices.getUserMedia({
-          video: {
-            width: { ideal: 1280 },
-            height: { ideal: 720 },
-            frameRate: { ideal: 60 },
-            facingMode: cameraFacingMode
-          },
-          audio: {
-            echoCancellation: true,
-            noiseSuppression: false,
-            autoGainControl: true,
-            channelCount: 1,
-            sampleRate: 48000,
-            sampleSize: 24,
-            latency: 0,
-            volume: 1.0,
-            advanced: [
-              { googEchoCancellation: true },
-              { googAutoGainControl: true },
-              { googNoiseSuppression: false },
-              { googHighpassFilter: false }
-            ]
-          }
-        });
-      } catch (err) {
-        console.error('Error accessing media devices:', err);
-        connectionInfo.innerHTML =
-          'Failed to access camera and microphone. Please check permissions.';
-        throw err;
-      }
-    }
-
-    async function init() {
-      updateStatus('CONNECTING');
-      spinner.style.display = 'block';
-
-      const urlParams = new URLSearchParams(window.location.search);
-      const code = urlParams.get('code');
-
-      try {
-        localStream = await getMedia();
-        localVideo.srcObject = localStream;
-
-        if (code) {
-          generatedPeerId = code;
-          connectionInfo.innerHTML = '';
-          setupReceiver(code);
-        } else {
-          generatedPeerId = generateId();
-          updateStatus('AWAITING CONNECTION');
-          connectionInfo.innerHTML =
-            `<button class="copy-btn glass" id="copyLinkBtn">
-               <i class="fas fa-copy"></i> Copy Call Link
-             </button>`;
-
-          peer = new Peer(generatedPeerId, {
-            secure: true,
-            host: '0.peerjs.com',
-            port: 443
-          });
-
-          peer.on('open', () => {
-            updateStatus('READY');
-            spinner.style.display = 'none';
-          });
-
-          peer.on('call', call => {
-            call.answer(localStream);
-            currentCall = call;
-            updateStatus('', true);
-            connectionInfo.innerHTML = '';
-            startTimer();
-            triggerVibration();
-            spinner.style.display = 'none';
-
-            call.on('stream', stream => {
-              remoteStream = stream;
-              remoteVideo.srcObject = remoteStream;
-              setupCloseDataConnection(call.peer);
-            });
-
-            call.on('close', () => {
-              updateStatus('DISCONNECTED');
-              stopTimer();
-              setTimeout(() => {
-                window.close();
-              }, 500);
-            });
-
-            call.on('error', (err) => {
-              console.error('Call error:', err);
-              updateStatus('CALL ERROR');
-              connectionInfo.innerHTML = `Error: ${err.message || err.type}`;
-              stopTimer();
-              spinner.style.display = 'none';
-            });
-          });
-        }
-
-        peer.on('error', (err) => {
-          console.error('PeerJS error:', err);
-          updateStatus('PEER ERROR');
-          connectionInfo.innerHTML = `Error: ${err.message || err.type}`;
-          stopTimer();
-          spinner.style.display = 'none';
-
-          if (code && connectionRetries < MAX_RETRIES) {
-            connectionRetries++;
-            connectionInfo.innerHTML +=
-              `<br>Retrying in 3 seconds (${connectionRetries}/${MAX_RETRIES})...`;
-            setTimeout(() => setupReceiver(code), RETRY_DELAY);
-          }
-        });
-
-      } catch (err) {
-        console.error('Initialization error:', err);
-        updateStatus('INIT ERROR');
-        connectionInfo.innerHTML = 'Failed to initialize. Please refresh the page.';
-        spinner.style.display = 'none';
-      }
-    }
-
-    function setupReceiver(code) {
-      peer = new Peer({ secure: true, host: '0.peerjs.com', port: 443 });
-
-      peer.on('open', () => {
-        const call = peer.call(code, localStream);
-        currentCall = call;
-        updateStatus('CONNECTING');
-
-        call.on('stream', stream => {
-          updateStatus('', true);
-          connectionInfo.innerHTML = '';
-          remoteStream = stream;
-          remoteVideo.srcObject = remoteStream;
-          startTimer();
-          triggerVibration();
-          spinner.style.display = 'none';
-          setupCloseDataConnection(call.peer);
-        });
-
-        call.on('close', () => {
-          updateStatus('DISCONNECTED');
-          stopTimer();
-          setTimeout(() => {
-            window.close();
-          }, 500);
-        });
-
-        call.on('error', (err) => {
-          console.error('Call error:', err);
-          updateStatus('CALL ERROR');
-          connectionInfo.innerHTML = `Error: ${err.message || err.type}`;
-          stopTimer();
-          spinner.style.display = 'none';
-
-          if (connectionRetries < MAX_RETRIES) {
-            connectionRetries++;
-            connectionInfo.innerHTML +=
-              `<br>Retrying in 3 seconds (${connectionRetries}/${MAX_RETRIES})...`;
-            setTimeout(() => setupReceiver(code), RETRY_DELAY);
-          }
-        });
-      });
-    }
-
-    function generateId() {
-      return Math.random().toString(36).substring(2, 8).toUpperCase();
-    }
-
-    function setupCloseDataConnection(remoteId) {
-      if (closeConn) {
-        closeConn.close();
-        closeConn = null;
-      }
-      closeConn = peer.connect(remoteId);
-
-      closeConn.on('open', () => {});
-
-      closeConn.on('data', data => {
-        if (data === 'close-call') {
-          window.close();
-        }
-      });
-
-      closeConn.on('error', err => {
-        console.error('DataConnection error:', err);
-      });
-    }
-
-    function triggerVibration() {
-      if (navigator.vibrate) {
-        navigator.vibrate(180);
-      }
-    }
-
-    document.addEventListener('click', (e) => {
-      if (e.target.id === 'copyLinkBtn' || e.target.closest('#copyLinkBtn')) {
-        const link = `${window.location.href.split('?')[0]}?code=${generatedPeerId}`;
-        navigator.clipboard.writeText(link).then(() => {
-          showNotification('Call link copied to clipboard!');
-        }).catch(err => {
-          console.error('Copy failed:', err);
-          showNotification('Failed to copy link');
-        });
-      }
-    });
-
-    document.getElementById('muteBtn').onclick = () => {
-      isMuted = !isMuted;
-      const audioTracks = localStream.getAudioTracks();
-      if (audioTracks.length > 0) {
-        audioTracks[0].enabled = !isMuted;
-      }
-      const micIcon = document.querySelector('#muteBtn i');
-      if (isMuted) {
-        micIcon.className = 'fas fa-microphone-slash';
-        document.getElementById('muteBtn').style.background = 'rgba(200, 30, 50, 0.9)';
-      } else {
-        micIcon.className = 'fas fa-microphone';
-        document.getElementById('muteBtn').style.background = 'rgba(20, 24, 36, 0.85)';
-      }
-    };
-
-    document.getElementById('switchCameraBtn').onclick = async () => {
-      try {
-        currentCamera = currentCamera === 'user' ? 'environment' : 'user';
-        const newStream = await getMedia(currentCamera);
-
-        if (currentCall && currentCall.peerConnection) {
-          const senders = currentCall.peerConnection.getSenders();
-          const videoSender = senders.find(s => s.track.kind === 'video');
-          const audioSender = senders.find(s => s.track.kind === 'audio');
-
-          if (videoSender && newStream.getVideoTracks()[0]) {
-            await videoSender.replaceTrack(newStream.getVideoTracks()[0]);
-          }
-          if (audioSender && newStream.getAudioTracks()[0]) {
-            await audioSender.replaceTrack(newStream.getAudioTracks()[0]);
-          }
-        }
-
-        const audioTracks = newStream.getAudioTracks();
-        if (audioTracks.length > 0) {
-          audioTracks[0].enabled = !isMuted;
-        }
-
-        localVideo.srcObject = newStream;
-        if (localStream) {
-          localStream.getTracks().forEach(track => track.stop());
-        }
-        localStream = newStream;
-      } catch (err) {
-        console.error('Error switching camera:', err);
-        connectionInfo.innerHTML = 'Error switching camera. Please try again.';
-      }
-    };
-
-    document.getElementById('endBtn').onclick = () => {
-      if (closeConn && closeConn.open) {
-        closeConn.send('close-call');
-      }
-      if (currentCall) {
-        currentCall.close();
-      }
-      if (peer) {
-        peer.destroy();
-      }
-      updateStatus('ENDING CALL');
-      stopTimer();
-      setTimeout(() => {
-        window.close();
-      }, 200);
-    };
-
-    fullscreenBtn.addEventListener('click', () => {
-      if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen();
-        fullscreenBtn.innerHTML = '<i class="fas fa-compress"></i>';
-      } else {
-        document.exitFullscreen();
-        fullscreenBtn.innerHTML = '<i class="fas fa-expand"></i>';
-      }
-    });
-
-    init();
   </script>
 </body>
 </html>

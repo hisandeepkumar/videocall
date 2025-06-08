@@ -50,13 +50,12 @@
     .video-container {
       flex: 1;
       position: relative;
-      overflow: hidden;
-      border-radius: 24px;
+      overflow: visible;
+      border-radius: 40px;
       margin: 20px;
       background: rgba(10, 12, 20, 0.4);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
-      /* Removed border to avoid overlap with glowing border */
       box-shadow: 0 0 8px 2px rgba(255, 255, 255, 0.6), 0 24px 60px rgba(0, 0, 0, 0.4), inset 0 0 0 1px rgba(255, 255, 255, 0.05);
     }
 
@@ -65,21 +64,21 @@
       position: relative;
       width: 100%;
       height: 100%;
-      border-radius: 24px;
+      border-radius: 40px;
     }
     .glow-border::before {
       content: '';
       position: absolute;
-      top: -12px;
-      left: -12px;
-      right: -12px;
-      bottom: -12px;
-      border-radius: 36px;
+      top: -8px;
+      left: -8px;
+      right: -8px;
+      bottom: -8px;
+      border-radius: 48px;
       background: linear-gradient(130deg, #ff0057, #ff7a00, #00ffe1, #ff00f2, #ff0057);
       background-size: 400%;
       animation: borderGlow 6s linear infinite;
       z-index: -1;
-      filter: blur(30px);
+      filter: blur(25px);
     }
     .glow-border::after {
       content: '';
@@ -88,7 +87,7 @@
       left: 0;
       right: 0;
       bottom: 0;
-      border-radius: 24px;
+      border-radius: 40px;
       padding: 3px;
       background: linear-gradient(130deg, #ff0057, #ff7a00, #00ffe1, #ff00f2, #ff0057);
       background-size: 400%;
@@ -113,10 +112,9 @@
       height: 100%;
       object-fit: cover;
       background: #000;
-      border-radius: 24px;
+      border-radius: 40px;
       z-index: 1;
       cursor: default;
-      /* Removed box-shadow as glow-border handles the effect */
     }
     #localVideo {
       height: 160px;
@@ -154,7 +152,7 @@
       width: 100%;
       height: 100%;
       z-index: 1;
-      border-radius: 24px;
+      border-radius: 40px;
     }
 
     /* Status Bar */
@@ -499,7 +497,6 @@
     const notification = document.getElementById('notification');
     const spinner = document.getElementById('spinner');
 
-    // Swap video positions (not streams) when local video is clicked
     localVideo.addEventListener('click', () => {
       if (!remoteStream) return;
       isSwapped = !isSwapped;
@@ -601,12 +598,10 @@
         localVideo.srcObject = localStream;
 
         if (code) {
-          // Receiver
           generatedPeerId = code;
           connectionInfo.innerHTML = '';
           setupReceiver(code);
         } else {
-          // Caller
           generatedPeerId = generateId();
           updateStatus('AWAITING CONNECTION');
           connectionInfo.innerHTML =
